@@ -8,7 +8,7 @@
 const path = require("node:path");
 const { spawn } = require("node:child_process");
 
-const REPO = path.resolve(__dirname, "..", "..");
+const REPO = path.resolve(__dirname, ".."); // the plugin is the repository's root
 const TOKEN = "unit-token";
 
 /** Start the mock API on a free port. Resolves to {baseUrl, rootUrl, stop}. */

@@ -13,7 +13,7 @@ const { execFileSync } = require("node:child_process");
 const { PLUGIN_VERSION, PLUGIN_ID } = require("../core/constants.js");
 const { REPO } = require("./support.js");
 
-const PLUGIN = path.join(REPO, "photoshop");
+const PLUGIN = REPO;
 const manifest = JSON.parse(fs.readFileSync(path.join(PLUGIN, "manifest.json"), "utf8"));
 
 function files(dir, exts, skip = ["node_modules", "dist", ".git"]) {

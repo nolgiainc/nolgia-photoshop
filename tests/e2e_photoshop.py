@@ -22,8 +22,8 @@ NOLGIA Bridge exactly as an agent drives it.
 
 Usage (Windows, from WSL or from Windows Python 3.8+, or macOS):
 
-    python3 photoshop/tests/e2e_photoshop.py                  # against tools/mock_bridge_server.py
-    python3 photoshop/tests/e2e_photoshop.py --prod --token-file ~/.config/nolgia/tokens.json
+    python3 tests/e2e_photoshop.py                  # against tools/mock_bridge_server.py
+    python3 tests/e2e_photoshop.py --prod --token-file ~/.config/nolgia/tokens.json
 
 --prod talks to https://api.nolgia.ai with a real token (a JSON file with
 `access_token`, or the token itself in NOLGIA_TOKEN). It uploads a few small
@@ -49,7 +49,7 @@ import zlib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PLUGIN_DIR = os.path.dirname(HERE)
-REPO = os.path.dirname(PLUGIN_DIR)
+REPO = PLUGIN_DIR  # the plugin is the repository's root
 sys.path.insert(0, os.path.join(REPO, "tools"))
 sys.path.insert(0, PLUGIN_DIR)
 

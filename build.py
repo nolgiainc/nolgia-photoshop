@@ -6,8 +6,8 @@
 A .ccx is a zip of the plugin folder with manifest.json at its root; Adobe's
 installer (double click, or UnifiedPluginInstallerAgent /install) takes it.
 
-    python3 photoshop/build.py                 # dist/nolgia-photoshop-<version>.ccx
-    python3 photoshop/build.py --dev-domain http://localhost:8765
+    python3 build.py                 # dist/nolgia-photoshop-<version>.ccx
+    python3 build.py --dev-domain http://localhost:8765
         # a test build that may also reach a local mock API and may open its
         # own panel (for screenshots): dist/nolgia-photoshop-<version>-dev.ccx
 
@@ -110,7 +110,7 @@ def build(out_dir, dev_domains=()):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--out", default=os.path.join(HERE, "dist"), help="output folder (default photoshop/dist)")
+    parser.add_argument("--out", default=os.path.join(HERE, "dist"), help="output folder (default dist)")
     parser.add_argument("--dev-domain", action="append", default=[],
                         help="extra network domain for a test build, e.g. http://localhost:8765 (repeatable)")
     opts = parser.parse_args()
