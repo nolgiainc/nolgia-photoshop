@@ -50,7 +50,8 @@ test("the developer file connects at startup with its own token", async () => {
     const id = await enqueue(mock, "info");
     const cmd = await waitCommand(mock, id);
     assert.equal(cmd.status, "succeeded");
-    assert.equal(ctl.activity.items()[0].status, "succeeded");
+    // The activity says succeeded once NOLGIA has answered the result, a moment after it stored it.
+    await until(() => ctl.activity.items()[0].status === "succeeded", { what: "succeeded in the activity list" });
   } finally {
     await stopped(ctl);
   }

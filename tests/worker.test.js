@@ -97,7 +97,8 @@ test("runs commands, with prepare and finish around them", async () => {
   assert.equal(cmd.status, "succeeded");
   assert.deepEqual(cmd.result, { asset_id: "x", prepared: { downloaded: true } });
   assert.deepEqual(seen, ["prepare import_asset", "finish"]);
-  assert.equal(activity.items()[0].status, "succeeded");
+  // The activity says succeeded once NOLGIA has answered the result, a moment after it stored it.
+  await until(() => activity.items()[0].status === "succeeded", { what: "succeeded in the activity list" });
   const bad = await waitCommand(mock, await enqueue(mock, "preview", { width: 99999 }));
   assert.equal(bad.status, "failed");
   assert.match(bad.error, /at most 1920/);
