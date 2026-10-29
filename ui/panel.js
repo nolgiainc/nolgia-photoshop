@@ -29,6 +29,9 @@ const EXAMPLES = [
 
 const LINK_WHY = "Open this NOLGIA page in your browser.";
 
+/** Activity rows shown until the person asks for all of them. */
+const ACTIVITY_SHOWN = 5;
+
 function pad(n) {
   return String(n).padStart(2, "0");
 }
@@ -88,12 +91,23 @@ function createPanel(controller, doc) {
     Promise.resolve(controller.host.openUrl(url, LINK_WHY)).catch((err) => controller.log("Could not open " + url + " (" + err + ")."));
   };
   const input = $("chat-input");
+  // The panel follows new rows in the thread unless the person scrolled the
+  // panel themselves: `panelAuto` is where the panel last put its scroll,
+  // `followNext` asks to follow after the person sends.
+  let panelAuto = null;
+  let followNext = false;
+  let activityAll = false;
+
+  function sendText(text) {
+    followNext = true;
+    return controller.chat.send(text);
+  }
 
   function sendFromBox() {
     if (!input || controller.chatBlocker() || controller.chat.busy) return;
     const text = String(input.value || "");
     if (!text.trim()) return;
-    controller.chat.send(text).then((sent) => {
+    sendText(text).then((sent) => {
       if (sent && input.value === text) input.value = "";
     });
   }
@@ -175,7 +189,7 @@ function createPanel(controller, doc) {
     if (row.status === "pending") {
       const text = doc.createElement("div");
       text.className = "text";
-      text.textContent = row.queued ? "Waiting for a free turn..." : "Working...";
+      text.textContent = row.queued ? "Waiting for its turn..." : "Working...";
       box.appendChild(text);
       return box;
     }
@@ -201,7 +215,7 @@ function createPanel(controller, doc) {
         btn.className = "btn small";
         btn.textContent = option.label;
         btn.addEventListener("click", () => {
-          if (!controller.chatBlocker() && !controller.chat.busy) controller.chat.send(option.label);
+          if (!controller.chatBlocker() && !controller.chat.busy) sendText(option.label);
         });
         options.appendChild(btn);
       }
@@ -232,24 +246,42 @@ function createPanel(controller, doc) {
     const signature = JSON.stringify([view.hidden, view.rows]);
     if (signature !== shownThread) {
       const thread = $("chat-thread");
+      const body = doc.body;
+      const before = body.scrollTop;
+      const personScrolled = panelAuto !== null && Math.abs(before - panelAuto) > 4;
+      const follow = followNext || !personScrolled || shownThread === null;
+      followNext = false;
       while (thread.firstChild) thread.removeChild(thread.firstChild);
       if (view.hidden) {
         const more = doc.createElement("div");
-        more.className = "hint";
-        more.textContent = "Earlier messages are on nolgia.ai.";
+        more.className = "link";
+        more.textContent = "Earlier messages are on nolgia.ai";
+        more.addEventListener("click", () => view.sessionUrl && openLink(view.sessionUrl));
         thread.appendChild(more);
       }
       for (const row of view.rows) thread.appendChild(messageNode(row));
       shownThread = signature;
       // After layout (Photoshop measures the new rows a moment later): a
-      // finished reply is read from its start, anything else from the end.
+      // finished reply is shown from its start; while one is on its way the
+      // box and the working line stay in view. A person who scrolled the
+      // panel stays where they are.
       const newest = view.rows[view.rows.length - 1];
       const fromStart = Boolean(newest && newest.role === "agent" && newest.status !== "pending");
       setTimeout(() => {
         try {
+          if (!follow) {
+            body.scrollTop = before;
+            return;
+          }
+          const top = body.getBoundingClientRect().top;
           const last = thread.lastChild;
-          if (fromStart && last) thread.scrollTop += last.getBoundingClientRect().top - thread.getBoundingClientRect().top - 8;
-          else thread.scrollTop = thread.scrollHeight;
+          if (fromStart && last) {
+            body.scrollTop += last.getBoundingClientRect().top - top - 8;
+          } else if (input) {
+            const gap = input.getBoundingClientRect().bottom - (top + body.clientHeight) + 12;
+            if (gap > 0) body.scrollTop += gap;
+          }
+          panelAuto = body.scrollTop;
         } catch (err) {
           // scrolling is a nicety
         }
@@ -327,7 +359,8 @@ function createPanel(controller, doc) {
     $("btn-pause").textContent = controller.connected ? "Pause" : "Resume";
     const list = $("activity-list");
     while (list.firstChild) list.removeChild(list.firstChild);
-    const items = controller.activity.items();
+    const all = controller.activity.items();
+    const items = activityAll ? all : all.slice(0, ACTIVITY_SHOWN);
     if (!items.length) {
       const empty = doc.createElement("div");
       empty.className = "empty";
@@ -351,6 +384,16 @@ function createPanel(controller, doc) {
       row.appendChild(kind);
       row.appendChild(status);
       list.appendChild(row);
+    }
+    if (all.length > ACTIVITY_SHOWN) {
+      const more = doc.createElement("div");
+      more.className = "link act-more";
+      more.textContent = activityAll ? "Show fewer" : "Show all " + all.length;
+      more.addEventListener("click", () => {
+        activityAll = !activityAll;
+        schedule();
+      });
+      list.appendChild(more);
     }
 
     renderChat();

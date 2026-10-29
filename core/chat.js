@@ -25,7 +25,8 @@ const { APP, AGENT_URL, BILLING_URL, COST_LINE, COST_LINE_RATE } = require("./co
 
 const MAX_CHARS = 8000; // SubmitAgentMessageRequest.content
 const SESSION_NAME_MAX = 80;
-const ROWS_SHOWN = 40;
+// The panel shows the newest rows only; the whole chat is on nolgia.ai.
+const ROWS_SHOWN = 10;
 const WAKE_EVERY = 10 * 60; // seconds between wake calls, like the site's chat
 
 /** How long to wait before the next read of a pending reply: quick at
@@ -619,7 +620,7 @@ class AgentChat {
     if (this.sending) working = "Sending...";
     else if (pending.length) {
       const row = pending[pending.length - 1];
-      if (row.queued) working = "Waiting for a free turn. Your other NOLGIA Agent chats are still running.";
+      if (row.queued) working = "Waiting for its turn. Your other NOLGIA Agent chats are still running.";
       else if (this._agentSleeping()) working = "Waking up NOLGIA Agent. This takes about a minute.";
       else working = "NOLGIA Agent is working. What it does in Photoshop shows in Activity below.";
     }

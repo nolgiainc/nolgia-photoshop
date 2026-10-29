@@ -1,11 +1,11 @@
 # NOLGIA for Photoshop
 
 NOLGIA's plugin for Photoshop. It connects Photoshop on your computer to
-NOLGIA, so your agent (Claude, Cursor, the NOLGIA Agent and others, through
-NOLGIA's MCP server) can look at your project, make changes in it, render
-previews and move files between the app and your NOLGIA library. Since 0.2.0
+NOLGIA, so NOLGIA Agent can look at your project, make changes in it, render
+previews and move files between the app and your NOLGIA library. Since 0.2.2
 the NOLGIA panel has a chat: type what you want done in this Photoshop and
-your NOLGIA Agent does it here.
+NOLGIA Agent does it here. Claude, Cursor, Codex and other agents
+connected to NOLGIA's MCP server reach the same commands.
 
 ```
 your agent --MCP--> mcp.nolgia.ai --> api.nolgia.ai <--(the plugin connects out)-- Photoshop on your computer
@@ -18,7 +18,7 @@ on, and it lists every command it runs.
 
 A UXP plugin for Photoshop 2024 (25.0) and newer. 0.1.0 was tested on Windows
 with Photoshop 2026 (27.5) and on macOS 26.6 (Apple silicon) with Photoshop
-2026 (27.11), against the mock API. The chat added in 0.2.0 has not been run
+2026 (27.11), against the mock API. The chat added in 0.2.2 has not been run
 on a Mac yet: see "Tested on" below.
 
 ## Install and use
@@ -39,7 +39,8 @@ on a Mac yet: see "Tested on" below.
 4. Click Sign in. Your browser opens a NOLGIA page; check that the code
    matches the one in the panel and approve it.
 5. Keep Connected on and tell NOLGIA Agent what to do in the panel's chat
-   box (or ask your own agent, like Claude or Cursor, with NOLGIA connected).
+   box. Claude, Cursor, Codex or another agent with NOLGIA connected can
+   work here too.
    Each command shows up in the Activity list. Click Pause (or turn
    Connected off) to stop at any time.
 
@@ -62,8 +63,7 @@ The NOLGIA AGENT card is a chat with your NOLGIA Agent, the same Agent and
 the same chats as nolgia.ai/agent:
 
 - Before your first message it suggests a few things to ask (a click puts one
-  in the box), and offers Open NOLGIA Agent (the chat on nolgia.ai) and your
-  own agent as the other ways in.
+  in the box), and offers Open NOLGIA Agent (the same chats on nolgia.ai).
 - Your first message starts a chat pinned to this Photoshop (`app` on
   `POST /agent/sessions`: `photoshop` and this install's `instance_id`), so
   every turn tells the Agent you are writing from this Photoshop and that
@@ -77,12 +77,22 @@ the same chats as nolgia.ai/agent:
 - It needs Connected and Allow NOLGIA Agent on (the Agent reaches this
   Photoshop through them); when one is off the card says so, with one button
   that turns it on.
-- **Cost:** the line under the box gives what a turn costs on your Agent's
-  model: "Each NOLGIA Agent turn costs from N credits on your model",
-  read from `GET /agent/models` for the brain `GET /agent` names. If
-  NOLGIA doesn't say, the site's line is shown instead: from 10 credits
-  each. Either way, each reply shows what it cost. With your own agent,
-  like Claude or Cursor, the work in Photoshop is free.
+- **Cost:** the line under the box puts NOLGIA Agent first, with what a turn
+  costs on your Agent's model: "NOLGIA Agent works right here, each turn
+  from N credits on your model", read from `GET /agent/models` for the
+  brain `GET /agent` names (from 10 credits when NOLGIA does not say). Then
+  "You can also use Claude, Cursor, Codex or another agent with NOLGIA
+  connected" (the agents nolgia.ai/mcp documents). Each reply shows what it
+  cost.
+- **Scrolling:** the panel is one scroller at any size, so the mouse wheel
+  works anywhere over it. Photoshop gives a panel no wheel events and does
+  not pass the wheel on from an inner scroller that reached its end, so
+  nothing inside scrolls on its own:
+  - the thread shows the newest 10 messages, and older ones open on
+    nolgia.ai;
+  - Activity shows the newest 5 commands, with Show all;
+  - a new reply scrolls the panel to its start, unless you scrolled the
+    panel yourself.
 - **No Agent or no credits:** if your account has no NOLGIA Agent yet, or no
   credits left, the card says so, with a link to nolgia.ai.
 
@@ -144,8 +154,26 @@ back as bare text without a line number. The pitfalls Photoshop scripting has
 
 ## Tested on
 
-- **0.2.0, the chat:** Windows 11 with Photoshop 2026 (27.5), against the
-  real NOLGIA API, on October 29, 2026:
+- **Release numbers:** 0.2.0 and 0.2.1 were never released. They were
+  builds tried in Photoshop, and an installed build of a version can't be
+  replaced by another build of the same version while Photoshop has it
+  loaded.
+- **0.2.2:** Windows 11 with Photoshop 2026 (27.5), against the real NOLGIA
+  API, on October 29, 2026. This exact build was installed with Adobe's
+  installer. Updating while Photoshop is open: see Install and use. Checked
+  there:
+  - **Sign in:** the panel signed in and connected.
+  - **Cost line:** gives this account's rate: "each turn from 70 credits on
+    your model".
+  - **Wheel:** scrolled the panel with the cursor over the thread, over
+    Activity and over the box, at 241x320 (the minimum), 321x600 and 391x798
+    (floating). With the cursor held mid panel, it went from the top to the
+    end at each size.
+  - **Activity:** shows 5 commands, with Show all and Show fewer.
+  - **No Agent turn on 0.2.2 itself:** the send and reply path is the one
+    the 0.2.0 build ran below.
+- **The chat, first run as the unreleased 0.2.0 build:** Windows 11 with
+  Photoshop 2026 (27.5), against the real NOLGIA API, on October 29, 2026:
   - **Install:** 0.2.0 went in with Adobe's installer over 0.1.0. It loaded
     after a Photoshop restart, with the sign in and settings kept.
   - **The test:** the panel opened from the Plugins menu, and the request
@@ -178,7 +206,7 @@ node --test tests/*.test.js
 Build the installable `.ccx` (Python 3, standard library):
 
 ```sh
-python3 build.py                    # dist/nolgia-photoshop-0.2.0.ccx
+python3 build.py                    # dist/nolgia-photoshop-0.2.2.ccx
 python3 build.py --dev-domain http://localhost:8791
                                               # a test build that may also reach a local mock API
 ```
