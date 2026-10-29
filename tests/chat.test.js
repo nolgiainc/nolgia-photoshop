@@ -301,12 +301,12 @@ test("the cost line names this account's own turn rate, read from its brain", as
   // No brain chosen: the default brain's rate.
   let chat = newChat(owner());
   await chat.start();
-  assert.equal(chat.view().costLine, "NOLGIA Agent works right here, each turn from 10 credits on your model. You can also use Claude Code, Cursor or another agent with NOLGIA connected.");
+  assert.equal(chat.view().costLine, "NOLGIA Agent works right here, each turn from 10 credits on your model. You can also use Claude Code, Cursor, Codex or another agent with NOLGIA connected.");
   // A premium brain: its rate.
   await mockAgent({ model: "claude-opus-5-5" });
   chat = newChat(owner());
   await chat.start();
-  assert.equal(chat.view().costLine, "NOLGIA Agent works right here, each turn from 70 credits on your model. You can also use Claude Code, Cursor or another agent with NOLGIA connected.");
+  assert.equal(chat.view().costLine, "NOLGIA Agent works right here, each turn from 70 credits on your model. You can also use Claude Code, Cursor, Codex or another agent with NOLGIA connected.");
   // New chat keeps it.
   chat.newChat();
   assert.match(chat.view().costLine, /each turn from 70 credits on your model/);
