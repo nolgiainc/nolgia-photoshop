@@ -198,10 +198,20 @@ test("out of credits, on the send or on the turn, offers Add credits", async () 
   await chat.send("hi");
   await reply({ status: "failed", error: "The wallet cannot pay for the turn.", error_code: "insufficient_credits" });
   await settled(chat);
-  const last = chat.view().rows[1];
-  assert.equal(last.failure, failureText({ status: "failed", error_code: "insufficient_credits" }));
-  assert.deepEqual(last.action, { label: "Add credits", url: BILLING_URL }, "the button sits on the failed reply");
-  assert.equal(chat.view().notice, null, "said once, not twice");
+  const view = chat.view();
+  assert.equal(view.rows.length, 1, "the failed reply is not drawn in the thread as well");
+  assert.deepEqual(view.notice, {
+    kind: "credits",
+    text: failureText({ status: "failed", error_code: "insufficient_credits" }),
+    action: { label: "Add credits", url: BILLING_URL },
+  });
+  // Once a later turn settles, the old failure is a reply like any other and the card goes.
+  await mockAgent({ submit_error: null });
+  await chat.send("try again");
+  await reply({ content: "Done." });
+  await settled(chat);
+  assert.equal(chat.view().notice, null);
+  assert.equal(chat.view().rows[1].failure, failureText({ status: "failed", error_code: "insufficient_credits" }));
   chat.reset();
 });
 

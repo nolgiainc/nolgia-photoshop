@@ -566,7 +566,12 @@ class AgentChat {
   /** What the panel draws. */
   view() {
     const all = this.messages();
-    const rows = all.slice(-ROWS_SHOWN).map((row) => {
+    // The newest reply failed for want of credits: say it once, in the
+    // notice card with Add credits, not again as a reply in the thread.
+    const newest = all[all.length - 1];
+    const outOfCredits = Boolean(newest && newest.role === "agent" && newest.status === "failed" && newest.error_code === "insufficient_credits");
+    const shown = outOfCredits ? all.slice(0, -1) : all;
+    const rows = shown.slice(-ROWS_SHOWN).map((row) => {
       const out = {
         id: row.id,
         role: row.role,
@@ -576,7 +581,6 @@ class AgentChat {
         text: row.content || "",
         blocks: row.role === "agent" && row.status !== "failed" ? formatReply(row.content) : null,
         failure: row.role === "agent" && (row.status === "failed" || row.status === "interrupted") ? failureText(row) : null,
-        action: row.role === "agent" && row.status === "failed" && row.error_code === "insufficient_credits" ? { label: "Add credits", url: BILLING_URL } : null,
         question: row.role === "agent" && row.status === "complete" && row.question && Array.isArray(row.question.options) ? row.question : null,
         credits: row.cost && typeof row.cost.credits === "number" ? row.cost.credits : null,
       };
@@ -597,12 +601,12 @@ class AgentChat {
     return {
       loaded: this.loaded,
       empty: all.length === 0,
-      hidden: Math.max(0, all.length - rows.length),
+      hidden: Math.max(0, shown.length - rows.length),
       rows,
       working,
       busy: this.busy,
       canStop: Boolean(this.sessionId && pending.length && !this.stopping),
-      notice: this.notice,
+      notice: this.notice || (outOfCredits ? { kind: "credits", text: failureText(newest), action: { label: "Add credits", url: BILLING_URL } } : null),
       sessionUrl: this.sessionId && all.length ? AGENT_URL + "/" + this.sessionId : null,
     };
   }

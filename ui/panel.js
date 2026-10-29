@@ -194,13 +194,7 @@ function createPanel(controller, doc) {
       el.textContent = row.failure;
       box.appendChild(el);
     }
-    if (row.action) {
-      const btn = doc.createElement("div");
-      btn.className = "btn small";
-      btn.textContent = row.action.label;
-      btn.addEventListener("click", () => openLink(row.action.url));
-      box.appendChild(btn);
-    }
+
     if (row.question && row.question.options.length) {
       const options = doc.createElement("div");
       options.className = "options";
