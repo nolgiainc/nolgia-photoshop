@@ -30,6 +30,10 @@ on a Mac yet: see "Tested on" below.
    installer also runs from a command prompt:
    `"C:\Program Files\Common Files\Adobe\Adobe Desktop Common\RemoteComponents\UPI\UnifiedPluginInstallerAgent\UnifiedPluginInstallerAgent.exe" /install nolgia-photoshop-<version>.ccx`
    (and `/remove "NOLGIA for Photoshop"` takes it out again).
+   Updating while Photoshop is open: the installer says it succeeded, but
+   Photoshop keeps running the version it loaded until you restart it (seen
+   on Windows with Photoshop 2026, 27.5, installing 0.2.0 over 0.1.0). Save
+   your work and restart Photoshop to load the new version.
 3. In Photoshop, open the NOLGIA panel from the Plugins menu (under NOLGIA
    for Photoshop).
 4. Click Sign in. Your browser opens a NOLGIA page; check that the code
@@ -133,6 +137,27 @@ back as bare text without a line number. The pitfalls Photoshop scripting has
   So after Pause and Resume, or a quick restart, the plugin waits for that
   poll to run out before it connects again ("Reconnecting to NOLGIA...").
 - Photoshop's Generative Fill has no scripting interface the plugin supports.
+
+## Tested on
+
+- **0.2.0, the chat:** Windows 11 with Photoshop 2026 (27.5), against the
+  real NOLGIA API, on October 29, 2026:
+  - **Install:** 0.2.0 went in with Adobe's installer over 0.1.0. It loaded
+    after a Photoshop restart, with the sign in and settings kept.
+  - **The test:** the panel opened from the Plugins menu, and the request
+    "Make an abstract art in my photoshop, using default colors and brushes
+    and tools." was typed in its box and sent. NOLGIA Agent painted it in
+    the open document through the plugin (info, a PSD safety copy, four
+    runs, a preview). The reply came back in the panel: 70 credits, about
+    100 s.
+  - **Also seen there:** the suggestions, the working state with Stop, and
+    the Allow NOLGIA Agent notice.
+  - **Three layout fixes found there:** the box's left margin, the colour of
+    a held Send, and scrolling to the start of a reply. They were checked as
+    live style changes in that panel.
+  - **Not run on a Mac yet.**
+- **0.1.0, everything else:** Windows with Photoshop 2026 (27.5) and macOS
+  26.6 (Apple silicon) with Photoshop 2026 (27.11), against the mock API.
 
 ## Development
 

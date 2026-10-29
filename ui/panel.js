@@ -243,11 +243,19 @@ function createPanel(controller, doc) {
       }
       for (const row of view.rows) thread.appendChild(messageNode(row));
       shownThread = signature;
-      try {
-        thread.scrollTop = thread.scrollHeight;
-      } catch (err) {
-        // scrolling is a nicety
-      }
+      // After layout (Photoshop measures the new rows a moment later): a
+      // finished reply is read from its start, anything else from the end.
+      const newest = view.rows[view.rows.length - 1];
+      const fromStart = Boolean(newest && newest.role === "agent" && newest.status !== "pending");
+      setTimeout(() => {
+        try {
+          const last = thread.lastChild;
+          if (fromStart && last) thread.scrollTop += last.getBoundingClientRect().top - thread.getBoundingClientRect().top - 8;
+          else thread.scrollTop = thread.scrollHeight;
+        } catch (err) {
+          // scrolling is a nicety
+        }
+      }, 60);
     }
     show("chat-thread", view.rows.length > 0);
 

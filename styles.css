@@ -188,10 +188,16 @@ body {
   border-color: #ff8a3d;
 }
 
-.btn.disabled,
-.btn.primary.disabled {
-  opacity: 0.45;
+/* Colours, not opacity: the Photoshop panel ignored opacity here. */
+.btn.disabled {
+  color: rgba(255, 255, 255, 0.4);
   cursor: default;
+}
+
+.btn.primary.disabled {
+  background-color: #3b2a1f;
+  border-color: #3b2a1f;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .btn.ghost {
@@ -460,6 +466,7 @@ body {
   align-self: flex-start;
 }
 
+/* The margin is spelled out: Photoshop gives a text area 8 px on the left. */
 .chat-input {
   display: block;
   box-sizing: border-box;
@@ -467,7 +474,7 @@ body {
   height: 64px;
   font-family: inherit;
   resize: none;
-  margin-top: 10px;
+  margin: 10px 0 0 0;
   padding: 6px;
   border-radius: 6px;
   border: 1px solid #2a3142;
