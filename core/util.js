@@ -272,7 +272,46 @@ function oneLine(value, limit) {
   return text.trim().slice(0, limit);
 }
 
+// The computer's operating system as NOLGIA names it: "macos", "windows",
+// "linux", or "" for anything else.
+function osName(platform) {
+  if (platform === "darwin") return "macos";
+  if (platform === "win32") return "windows";
+  if (platform === "linux") return "linux";
+  return "";
+}
+
+const XML_ENTITIES = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
+
+/** A Mac's Computer Name (System Settings > General > About, "Louie's
+ *  MacBook Pro") from /Library/Preferences/SystemConfiguration/preferences.plist,
+ *  an XML property list: System > System > ComputerName. "" when the text is
+ *  not that (a binary plist, say). */
+function computerNameFromSystemPreferences(text) {
+  const m = /<key>ComputerName<\/key>\s*<string>([^<]*)<\/string>/.exec(String(text || ""));
+  if (!m) return "";
+  return m[1]
+    .replace(/&(amp|lt|gt|quot|apos);/g, (_, name) => XML_ENTITIES[name])
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#([0-9]+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)))
+    .trim();
+}
+
+/** The computer's name the other NOLGIA plugins keep in
+ *  <NOLGIA data>/computer.json ({"name": ...}); "" when there is none. */
+function computerNameFromSharedFile(text) {
+  try {
+    const data = JSON.parse(String(text || ""));
+    return data && typeof data.name === "string" ? data.name.trim() : "";
+  } catch (err) {
+    return "";
+  }
+}
+
 module.exports = {
+  osName,
+  computerNameFromSystemPreferences,
+  computerNameFromSharedFile,
   parseTime,
   Backoff,
   cutText,

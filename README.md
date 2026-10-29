@@ -16,10 +16,9 @@ The plugin always connects out to NOLGIA; nothing connects in to your
 computer. It only takes commands while you are signed in and have it switched
 on, and it lists every command it runs.
 
-A UXP plugin for Photoshop 2024 (25.0) and newer. 0.1.0 was tested on Windows
-with Photoshop 2026 (27.5) and on macOS 26.6 (Apple silicon) with Photoshop
-2026 (27.11), against the mock API. The chat added in 0.2.2 has not been run
-on a Mac yet: see "Tested on" below.
+A UXP plugin for Photoshop 2024 (25.0) and newer, tested on Windows with
+Photoshop 2026 (27.5) and on macOS 26.6.2 (Apple silicon) with Photoshop 2026
+(27.11): see "Tested on" below.
 
 ## Install and use
 
@@ -154,6 +153,20 @@ back as bare text without a line number. The pitfalls Photoshop scripting has
 
 ## Tested on
 
+- **0.2.3:** fixes from the owner's Mac test of 0.2.2. The panel reports the
+  computer's own name (on a Mac the Computer Name from System Settings >
+  General > About, read from macOS's SystemConfiguration preferences; on
+  Windows the name the other NOLGIA plugins found, as UXP cannot ask
+  Windows) and its operating system, and the sign in page names Photoshop.
+  Unit tests on Windows; on macOS it waits for its re-test.
+- **0.2.2 on macOS:** macOS 26.6.2 (Apple silicon) with Photoshop 2026
+  (27.11.0), against the real NOLGIA API, on October 29, 2026. Installed
+  with Adobe's installer (no NOLGIA plugin before), signed in and
+  connected; the request "Make an abstract art in my photoshop, using default
+  colors and brushes and tools." from the panel's chat painted in the
+  document (70 credits); the working state with Stop, the reply in the
+  panel, Activity and the panel scrolling down to Sign out all passed. It
+  showed the computer's name as "louieknows's Mac" (fixed in 0.2.3).
 - **Release numbers:** 0.2.0 and 0.2.1 were never released. They were
   builds tried in Photoshop, and an installed build of a version can't be
   replaced by another build of the same version while Photoshop has it
@@ -187,7 +200,6 @@ back as bare text without a line number. The pitfalls Photoshop scripting has
   - **Three layout fixes found there:** the box's left margin, the colour of
     a held Send, and scrolling to the start of a reply. They were checked as
     live style changes in that panel.
-  - **Not run on a Mac yet.**
 - **0.1.0, everything else:** Windows with Photoshop 2026 (27.5) and macOS
   26.6 (Apple silicon) with Photoshop 2026 (27.11), against the mock API.
 
@@ -206,7 +218,7 @@ node --test tests/*.test.js
 Build the installable `.ccx` (Python 3, standard library):
 
 ```sh
-python3 build.py                    # dist/nolgia-photoshop-0.2.2.ccx
+python3 build.py                    # dist/nolgia-photoshop-0.2.3.ccx
 python3 build.py --dev-domain http://localhost:8791
                                               # a test build that may also reach a local mock API
 ```

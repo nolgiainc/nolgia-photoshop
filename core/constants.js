@@ -8,7 +8,7 @@
 "use strict";
 
 module.exports = {
-  PLUGIN_VERSION: "0.2.2",
+  PLUGIN_VERSION: "0.2.3",
   PLUGIN_ID: "com.nolgia.photoshop",
   APP: "photoshop",
   DEFAULT_API_URL: "https://api.nolgia.ai/v1",
