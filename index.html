@@ -40,6 +40,37 @@
         <div class="btn ghost" id="btn-cancel-sign-in">Cancel</div>
       </div>
 
+      <div class="card" id="chat">
+        <div class="row between">
+          <div class="label">NOLGIA AGENT</div>
+          <div class="btn small" id="btn-new-chat">New chat</div>
+        </div>
+        <div id="chat-intro">
+          <div class="lead">Tell NOLGIA Agent what to do in this Photoshop.</div>
+          <div class="hint">Try one of these:</div>
+          <div id="chat-examples"></div>
+          <div class="btn ghost" id="btn-open-agent">Open NOLGIA Agent</div>
+          <div class="hint">Or use your own agent, like Claude or Cursor, with NOLGIA connected.</div>
+        </div>
+        <div class="thread" id="chat-thread"></div>
+        <div class="working hidden" id="chat-working"></div>
+        <div class="notice hidden" id="chat-notice">
+          <div id="chat-notice-text"></div>
+          <div class="btn small" id="btn-chat-notice"></div>
+        </div>
+        <div class="notice hidden" id="chat-blocker">
+          <div id="chat-blocker-text"></div>
+          <div class="btn small" id="btn-chat-fix"></div>
+        </div>
+        <textarea class="chat-input" id="chat-input" placeholder="Ask NOLGIA Agent to make or change something here"></textarea>
+        <div class="row">
+          <div class="btn hidden" id="btn-stop">Stop</div>
+          <div class="btn primary" id="btn-send">Send</div>
+        </div>
+        <div class="hint" id="chat-cost"></div>
+        <div class="link hidden" id="chat-open-web">Open this chat on nolgia.ai</div>
+      </div>
+
       <div class="card" id="account">
         <div class="muted" id="account-line"></div>
         <div class="toggle" id="tg-connected">

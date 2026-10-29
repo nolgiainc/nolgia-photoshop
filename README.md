@@ -3,19 +3,23 @@
 NOLGIA's plugin for Photoshop. It connects Photoshop on your computer to
 NOLGIA, so your agent (Claude, Cursor, the NOLGIA Agent and others, through
 NOLGIA's MCP server) can look at your project, make changes in it, render
-previews and move files between the app and your NOLGIA library.
+previews and move files between the app and your NOLGIA library. Since 0.2.0
+the NOLGIA panel has a chat: type what you want done in this Photoshop and
+your NOLGIA Agent does it here.
 
 ```
 your agent --MCP--> mcp.nolgia.ai --> api.nolgia.ai <--(the plugin connects out)-- Photoshop on your computer
+the panel's chat -----------------> api.nolgia.ai --> your NOLGIA Agent (works in this Photoshop the same way)
 ```
 
 The plugin always connects out to NOLGIA; nothing connects in to your
 computer. It only takes commands while you are signed in and have it switched
 on, and it lists every command it runs.
 
-A UXP plugin for Photoshop 2024 (25.0) and newer. Tested on Windows with
-Photoshop 2026 (27.5) and on macOS 26.6 (Apple silicon) with Photoshop 2026
-(27.11), against the mock API.
+A UXP plugin for Photoshop 2024 (25.0) and newer. 0.1.0 was tested on Windows
+with Photoshop 2026 (27.5) and on macOS 26.6 (Apple silicon) with Photoshop
+2026 (27.11), against the mock API. The chat added in 0.2.0 has not been run
+on a Mac yet: see "Tested on" below.
 
 ## Install and use
 
@@ -30,9 +34,10 @@ Photoshop 2026 (27.5) and on macOS 26.6 (Apple silicon) with Photoshop 2026
    for Photoshop).
 4. Click Sign in. Your browser opens a NOLGIA page; check that the code
    matches the one in the panel and approve it.
-5. Keep Connected on and ask your agent to work in Photoshop. Each command
-   shows up in the Activity list. Click Pause (or turn Connected off) to stop
-   at any time.
+5. Keep Connected on and tell NOLGIA Agent what to do in the panel's chat
+   box (or ask your own agent, like Claude or Cursor, with NOLGIA connected).
+   Each command shows up in the Activity list. Click Pause (or turn
+   Connected off) to stop at any time.
 
 Photoshop loads the plugin when it starts, so NOLGIA reconnects by itself
 when you left Connected on, even with the panel closed.
@@ -47,13 +52,41 @@ Settings in the NOLGIA panel:
 - **Sign out**: disconnect and forget the sign in on this computer (the token
   is kept in UXP secure storage, encrypted by your system).
 
+## The chat in the panel
+
+The NOLGIA AGENT card is a chat with your NOLGIA Agent, the same Agent and
+the same chats as nolgia.ai/agent:
+
+- Before your first message it suggests a few things to ask (a click puts one
+  in the box), and offers Open NOLGIA Agent (the chat on nolgia.ai) and your
+  own agent as the other ways in.
+- Your first message starts a chat pinned to this Photoshop (`app` on
+  `POST /agent/sessions`: `photoshop` and this install's `instance_id`), so
+  every turn tells the Agent you are writing from this Photoshop and that
+  your requests are about it. It shows on nolgia.ai as "Photoshop: " and
+  your first words. The panel remembers it; New chat starts another. A chat
+  that is not pinned to this install is never used here.
+- One message is one turn: while the Agent works, the box waits ("NOLGIA
+  Agent is working"), and Stop ends the turn. What it does in Photoshop
+  shows in the Activity list as usual. The reply comes back in the panel
+  with what the turn cost.
+- It needs Connected and Allow NOLGIA Agent on (the Agent reaches this
+  Photoshop through them); when one is off the card says so, with one button
+  that turns it on.
+- NOLGIA Agent turns cost from 10 credits each. With your own agent, like
+  Claude or Cursor, the work in Photoshop is free. No NOLGIA Agent on your
+  account yet, or no credits left: the card says so, with a link to
+  nolgia.ai.
+
+The chat uses the sign in the panel already has; it asks for nothing new.
+
 Code that NOLGIA runs in Photoshop runs on your computer with your
 permissions, like any plugin or script. Turn on Ask before running code if
 you want to see it first. The plugin asks Photoshop for: network access to
 api.nolgia.ai and NOLGIA's file storage (storage.googleapis.com), full file
 access (to open, save and export where your agent asks), opening https links
-(the sign in page), the clipboard (Copy code) and running code from text
-(the `run` command).
+(the sign in page, and nolgia.ai pages the chat links to), the clipboard
+(Copy code) and running code from text (the `run` command).
 
 ## What your agent can do
 
@@ -116,7 +149,7 @@ node --test tests/*.test.js
 Build the installable `.ccx` (Python 3, standard library):
 
 ```sh
-python3 build.py                    # dist/nolgia-photoshop-0.1.0.ccx
+python3 build.py                    # dist/nolgia-photoshop-0.2.0.ccx
 python3 build.py --dev-domain http://localhost:8791
                                               # a test build that may also reach a local mock API
 ```
