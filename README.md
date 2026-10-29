@@ -4,7 +4,7 @@ NOLGIA's plugin for Photoshop. It connects Photoshop on your computer to
 NOLGIA, so NOLGIA Agent can look at your project, make changes in it, render
 previews and move files between the app and your NOLGIA library. Since 0.2.1
 the NOLGIA panel has a chat: type what you want done in this Photoshop and
-NOLGIA Agent does it here. Claude Code, Cursor, Codex and other agents
+NOLGIA Agent does it here. Claude, Cursor, Codex and other agents
 connected to NOLGIA's MCP server reach the same commands.
 
 ```
@@ -39,7 +39,7 @@ on a Mac yet: see "Tested on" below.
 4. Click Sign in. Your browser opens a NOLGIA page; check that the code
    matches the one in the panel and approve it.
 5. Keep Connected on and tell NOLGIA Agent what to do in the panel's chat
-   box. Claude Code, Cursor, Codex or another agent with NOLGIA connected can
+   box. Claude, Cursor, Codex or another agent with NOLGIA connected can
    work here too.
    Each command shows up in the Activity list. Click Pause (or turn
    Connected off) to stop at any time.
@@ -81,7 +81,7 @@ the same chats as nolgia.ai/agent:
   costs on your Agent's model: "NOLGIA Agent works right here, each turn
   from N credits on your model", read from `GET /agent/models` for the
   brain `GET /agent` names (from 10 credits when NOLGIA does not say). Then
-  "You can also use Claude Code, Cursor, Codex or another agent with NOLGIA
+  "You can also use Claude, Cursor, Codex or another agent with NOLGIA
   connected" (the agents nolgia.ai/mcp documents). Each reply shows what it
   cost.
 - **Scrolling:** the panel scrolls as a whole at any size, the chat thread
