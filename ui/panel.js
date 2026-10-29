@@ -6,7 +6,7 @@
 "use strict";
 
 const { ActivityLog } = require("../core/commands.js");
-const { AGENT_URL, COST_LINE } = require("../core/constants.js");
+const { AGENT_URL } = require("../core/constants.js");
 
 const CHIP_TEXT = {
   off: "Off",
@@ -144,8 +144,6 @@ function createPanel(controller, doc) {
       examples.appendChild(el);
     }
   }
-  const cost = $("chat-cost");
-  if (cost) cost.textContent = COST_LINE;
 
   /** One piece of a reply: text, bold text or a link. */
   function part(p) {
@@ -278,6 +276,7 @@ function createPanel(controller, doc) {
     $("btn-send").textContent = controller.chat.sending ? "Sending..." : "Send";
     show("btn-stop", view.canStop);
     show("chat-open-web", Boolean(view.sessionUrl));
+    $("chat-cost").textContent = view.costLine;
   }
 
   let shownCode = null;

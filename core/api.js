@@ -277,6 +277,12 @@ class ApiClient {
     }
   }
 
+  /** GET /agent/models: the brains and what a turn costs on each. */
+  async listAgentModels() {
+    const data = (await this.request("GET", "/agent/models")).json() || {};
+    return Array.isArray(data.models) ? data.models : [];
+  }
+
   /** POST /agent/wake: start waking a sleeping agent early. */
   async wakeAgent() {
     return (await this.request("POST", "/agent/wake")).json() || null;

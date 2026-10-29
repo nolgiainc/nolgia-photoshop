@@ -7,7 +7,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { ApiClient } = require("../core/api.js");
-const { AgentChat, formatReply, sessionName, timeKey, failureText, MAX_CHARS } = require("../core/chat.js");
+const { AgentChat, formatReply, sessionName, timeKey, failureText, turnRate, MAX_CHARS } = require("../core/chat.js");
 const { Controller } = require("../core/controller.js");
 const { AGENT_URL, BILLING_URL, COST_LINE } = require("../core/constants.js");
 const { TOKEN, startMock, call, mockState, until, fakeHost } = require("./support.js");
@@ -295,6 +295,32 @@ test("the poll timer runs as a plain call, as UXP's and browsers' setTimeout req
   } finally {
     global.setTimeout = real;
   }
+});
+
+test("the cost line names this account's own turn rate, read from its brain", async () => {
+  // No brain chosen: the default brain's rate.
+  let chat = newChat(owner());
+  await chat.start();
+  assert.equal(chat.view().costLine, "Each NOLGIA Agent turn costs from 10 credits on your model. With your own agent, like Claude or Cursor, the work in Photoshop is free.");
+  // A premium brain: its rate.
+  await mockAgent({ model: "claude-opus-5-5" });
+  chat = newChat(owner());
+  await chat.start();
+  assert.equal(chat.view().costLine, "Each NOLGIA Agent turn costs from 70 credits on your model. With your own agent, like Claude or Cursor, the work in Photoshop is free.");
+  // New chat keeps it.
+  chat.newChat();
+  assert.match(chat.view().costLine, /from 70 credits on your model/);
+  // The catalogue does not answer, or names no such brain: the site's words.
+  await mockAgent({ models_error: true });
+  chat = newChat(owner());
+  await chat.start();
+  assert.equal(chat.view().costLine, COST_LINE);
+  assert.equal(turnRate({ model: "retired-brain" }, [{ model: "claude-opus-5-5", turn_credits: 70, default: false }]), null);
+  // No NOLGIA Agent: the site's words.
+  await mockAgent({ provisioned: false, models_error: false });
+  chat = newChat(owner());
+  await chat.start();
+  assert.equal(chat.view().costLine, COST_LINE);
 });
 
 test("a refused sign in goes back to the controller; a long message stays in the box", async () => {

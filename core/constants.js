@@ -18,6 +18,9 @@ module.exports = {
   AGENT_URL: "https://nolgia.ai/agent",
   BILLING_URL: "https://nolgia.ai/billing",
   MCP_URL: "https://nolgia.ai/mcp",
-  // What a NOLGIA Agent turn costs, in the site's words (desktopAppCostLine).
+  // What a NOLGIA Agent turn costs: the person's own rate when NOLGIA tells
+  // it (GET /agent/models for the Agent's brain), else the site's words
+  // (desktopAppCostLine).
   COST_LINE: "NOLGIA Agent turns cost from 10 credits each. With your own agent, like Claude or Cursor, the work in Photoshop is free.",
+  COST_LINE_RATE: "Each NOLGIA Agent turn costs from {credits} credits on your model. With your own agent, like Claude or Cursor, the work in Photoshop is free.",
 };

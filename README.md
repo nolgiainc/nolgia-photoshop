@@ -77,10 +77,14 @@ the same chats as nolgia.ai/agent:
 - It needs Connected and Allow NOLGIA Agent on (the Agent reaches this
   Photoshop through them); when one is off the card says so, with one button
   that turns it on.
-- NOLGIA Agent turns cost from 10 credits each. With your own agent, like
-  Claude or Cursor, the work in Photoshop is free. No NOLGIA Agent on your
-  account yet, or no credits left: the card says so, with a link to
-  nolgia.ai.
+- **Cost:** the line under the box gives what a turn costs on your Agent's
+  model: "Each NOLGIA Agent turn costs from N credits on your model",
+  read from `GET /agent/models` for the brain `GET /agent` names. If
+  NOLGIA doesn't say, the site's line is shown instead: from 10 credits
+  each. Either way, each reply shows what it cost. With your own agent,
+  like Claude or Cursor, the work in Photoshop is free.
+- **No Agent or no credits:** if your account has no NOLGIA Agent yet, or no
+  credits left, the card says so, with a link to nolgia.ai.
 
 The chat uses the sign in the panel already has; it asks for nothing new.
 

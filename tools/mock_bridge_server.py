@@ -20,7 +20,7 @@ Under /v1:
                  GET /assets?project_id=&sort=&limit=&cursor= (ready assets; pages of `limit`)
   color presets  GET /color-presets, GET /color-presets/{slug}/cube (public, no token needed; a few
                  made-up presets with small 5-point cubes, not the real looks)
-  agent chat     GET /agent, POST /agent/wake, POST /agent/sessions (app pin), POST /agent/messages
+  agent chat     GET /agent, GET /agent/models, POST /agent/wake, POST /agent/sessions (app pin), POST /agent/messages
                  (session_id or new_session, steering), GET /agent/messages?session_id=&since=&limit=, GET /agent/messages/{id},
                  GET /agent/sessions/{id}, POST /agent/sessions/{id}/interrupt (the shapes of
                  nolgia-api agent_messages.go; replies are settled by the test, see below)
@@ -31,7 +31,8 @@ Test helpers (no auth):
   GET  /mock/assets/{id}/bytes, GET /mock/state, POST /mock/reset,
   POST /mock/device/approve {user_code} | {"all": true}, POST /mock/device/deny
   POST /mock/agent {provisioned?, sleep_state?, submit_error?: {status, title, detail, code},
-                    app_pin?: bool (POST /agent/sessions takes `app`), auto_reply?: text|null}
+                    app_pin?: bool (POST /agent/sessions takes `app`), auto_reply?: text|null,
+                    model?: the Agent's brain (null: the default), models_error?: bool}
   POST /mock/agent/reply {message_id?, content?, status?, error?, error_code?, question?, queued?}
                     settles (or updates) a pending reply; without message_id, the newest pending one
 
@@ -181,7 +182,7 @@ class MockState:
             self.results = []
             self.rate = collections.defaultdict(collections.deque)
             self.agent = {"provisioned": True, "sleep_state": "awake", "submit_error": None,
-                          "app_pin": True, "auto_reply": None}
+                          "app_pin": True, "auto_reply": None, "model": None, "models_error": False}
             self.agent_sessions = {}
             self.agent_messages = {}
             self.agent_submits = []
@@ -1183,7 +1184,8 @@ def agent_view(st, user_id):
     return {"id": str(uuid.uuid5(uuid.NAMESPACE_URL, "agent/" + user_id)), "name": "NOLGIA Agent",
             "status": "running", "release_name": "cust-mock", "namespace": "cust-mock",
             "gnosis_tenant_id": "mock", "chat_connected": True, "auto_provisioned": False,
-            "sleep_state": st.agent["sleep_state"], "created_at": stamp, "updated_at": stamp}
+            "sleep_state": st.agent["sleep_state"], "model": st.agent["model"],
+            "created_at": stamp, "updated_at": stamp}
 
 
 def agent_session_view(st, s):
@@ -1258,6 +1260,22 @@ def get_agent(h):
         if not st.agent["provisioned"]:
             raise HttpError(404, "Not Found", "no agent is provisioned for this account")
         return h._send(200, agent_view(st, user["user_id"]))
+
+
+# The brain catalogue as nolgia-api serves it (agent_models.go), rates as of 2026-10-29.
+AGENT_MODELS = [
+    {"model": "deepseek-v4-flash", "turn_credits": 10, "default": True},
+    {"model": "gemini-3.8-flash", "turn_credits": 25, "default": False},
+    {"model": "claude-opus-5-5", "turn_credits": 70, "default": False},
+]
+
+
+@route("GET", r"/v1/agent/models")
+def list_agent_models(h):
+    h.user()
+    if h.state.agent["models_error"]:
+        raise HttpError(500, "Internal Server Error", "agent model catalogue unavailable")
+    return h._send(200, {"models": AGENT_MODELS})
 
 
 @route("POST", r"/v1/agent/wake")
@@ -1441,7 +1459,7 @@ def mock_agent(h):
     body = h.json()
     st = h.state
     with st.cond:
-        for key in ("provisioned", "sleep_state", "submit_error", "app_pin", "auto_reply"):
+        for key in ("provisioned", "sleep_state", "submit_error", "app_pin", "auto_reply", "model", "models_error"):
             if key in body:
                 st.agent[key] = body[key]
     return h._send(204)

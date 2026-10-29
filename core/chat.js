@@ -21,7 +21,7 @@
 "use strict";
 
 const { ApiError, Unauthorized, NetworkError } = require("./api.js");
-const { APP, AGENT_URL, BILLING_URL } = require("./constants.js");
+const { APP, AGENT_URL, BILLING_URL, COST_LINE, COST_LINE_RATE } = require("./constants.js");
 
 const MAX_CHARS = 8000; // SubmitAgentMessageRequest.content
 const SESSION_NAME_MAX = 80;
@@ -60,6 +60,20 @@ function byTime(a, b) {
   const kb = timeKey(b.created_at);
   if (ka === kb) return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
   return ka < kb ? -1 : 1;
+}
+
+/** What one turn costs on the Agent's brain: its catalogue rate (the
+ *  default brain's when none is chosen), or null when unknown. */
+function turnRate(agent, models) {
+  if (!agent || !Array.isArray(models)) return null;
+  const chosen = agent.model ? models.find((m) => m && m.model === agent.model) : models.find((m) => m && m.default);
+  const credits = chosen && chosen.turn_credits;
+  return Number.isInteger(credits) && credits > 0 ? credits : null;
+}
+
+/** The cost line under the box. */
+function costLine(rate) {
+  return rate ? COST_LINE_RATE.replace("{credits}", String(rate)) : COST_LINE;
 }
 
 /** A failed or stopped reply, in words for the panel. */
@@ -163,6 +177,7 @@ class AgentChat {
     this.stopping = false;
     this.notice = null; // {kind, text, action: {label, url}|null}
     this.agent = undefined; // GET /agent: undefined unread, null none
+    this.rate = null; // credits a turn costs on the Agent's brain, when known
     this.loaded = false;
     this._generation = (this._generation || 0) + 1;
     this._timer = null;
@@ -205,8 +220,10 @@ class AgentChat {
     this._stopTimer();
     this._remember(null);
     const agent = this.agent;
+    const rate = this.rate;
     this._clear();
     this.agent = agent;
+    this.rate = rate;
     this.loaded = true;
     this.owner.bump();
   }
@@ -259,12 +276,20 @@ class AgentChat {
   // ---------------------------------------------------------------- reads
 
   async _readAgent(gen) {
+    const api = this.owner.api();
     try {
-      const agent = await this.owner.api().getAgent();
+      const agent = await api.getAgent();
       if (gen === this._generation) this.agent = agent;
     } catch (err) {
       if (err instanceof Unauthorized) throw err;
       // the chat still works; this only names a sleeping agent
+    }
+    if (!this.agent) return;
+    try {
+      const rate = turnRate(this.agent, await api.listAgentModels());
+      if (gen === this._generation) this.rate = rate;
+    } catch (err) {
+      // the cost line falls back to the site's words
     }
   }
 
@@ -608,8 +633,9 @@ class AgentChat {
       canStop: Boolean(this.sessionId && pending.length && !this.stopping),
       notice: this.notice || (outOfCredits ? { kind: "credits", text: failureText(newest), action: { label: "Add credits", url: BILLING_URL } } : null),
       sessionUrl: this.sessionId && all.length ? AGENT_URL + "/" + this.sessionId : null,
+      costLine: costLine(this.rate),
     };
   }
 }
 
-module.exports = { AgentChat, formatReply, inlineParts, sessionName, failureText, pollDelay, timeKey, MAX_CHARS };
+module.exports = { AgentChat, formatReply, inlineParts, sessionName, failureText, pollDelay, timeKey, turnRate, costLine, MAX_CHARS };
