@@ -54,6 +54,7 @@ class BridgeWorker {
     log = null,
     heartbeatInterval = 20,
     machineName = "",
+    os = "",
     clock = () => Date.now() / 1000,
     startDelay = 0,
     onPoll = null,
@@ -70,6 +71,10 @@ class BridgeWorker {
     this.log = log || (() => {});
     this.heartbeatInterval = heartbeatInterval;
     this.machineName = machineName;
+    this.os = os;
+    // An API from before sessions carried the OS refuses the field; then the
+    // plugin stops sending it rather than stop connecting.
+    this.sendOs = Boolean(os);
     this.clock = clock;
     this.startDelay = startDelay;
     this.onPoll = onPoll || (() => {});
@@ -181,7 +186,7 @@ class BridgeWorker {
     const doc = snap.document || {};
     const document = { name: String(doc.name || "").slice(0, MAX_DOCUMENT_NAME) };
     if (doc.path && String(doc.path).length <= MAX_DOCUMENT_PATH) document.path = String(doc.path);
-    return {
+    const body = {
       instance_id: this.instanceId,
       app: APP,
       app_version: oneLine(snap.app_version, MAX_VERSION),
@@ -191,6 +196,8 @@ class BridgeWorker {
       capabilities: CAPABILITIES.slice(),
       allow_agent: snap.allow_agent === undefined ? true : Boolean(snap.allow_agent),
     };
+    if (this.sendOs) body.os = this.os;
+    return body;
   }
 
   _authFailed(err) {
@@ -232,6 +239,10 @@ class BridgeWorker {
             break;
           }
           if (err instanceof ApiError || err instanceof NetworkError) {
+            if (this.sendOs && err instanceof ApiError && err.status === 400 && String(err.detail).includes('"os"')) {
+              this.sendOs = false;
+              continue;
+            }
             const delay = err.retryAfter || backoff.next();
             this._setStatus(Status.RETRYING, this._retryText(err, delay));
             this.log(this.statusText);

@@ -20,6 +20,10 @@ test("approve in the browser: a token comes back", async () => {
   const login = new DeviceLogin(new ApiClient({ baseUrl: mock.baseUrl }));
   const prompt = await login.start();
   assert.match(prompt.openUrl, /\/device\?user_code=/);
+  // The page names the app signing in, never the CLI's words.
+  const { DevicePrompt } = require("../core/auth.js");
+  const named = new DevicePrompt({ device_code: "d", user_code: "ABCD-EFGH", verification_uri: "https://nolgia.ai/device", verification_uri_complete: "https://nolgia.ai/device?user_code=ABCD-EFGH" }, "photoshop");
+  assert.equal(named.openUrl, "https://nolgia.ai/device?user_code=ABCD-EFGH&client=photoshop");
   assert.equal(prompt.interval, 1);
   setTimeout(() => call(mock, "POST", "/mock/device/approve", { user_code: prompt.userCode }, { token: null }), 1500);
   const token = await login.waitForToken(prompt);

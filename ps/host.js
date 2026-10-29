@@ -19,6 +19,8 @@ const uxp = require("uxp");
 const ops = require("./ops.js");
 const paths = require("./paths.js");
 const { PLUGIN_VERSION } = require("../core/constants.js");
+const pathutil = require("../core/pathutil.js");
+const util = require("../core/util.js");
 
 const fs = uxp.storage.localFileSystem;
 const formats = uxp.storage.formats;
@@ -72,27 +74,57 @@ async function writeDataFile(name, text) {
   await file.write(text, { format: formats.utf8 });
 }
 
-function machineName() {
+// The computer's own name, the one its owner knows it by, the way every NOLGIA
+// plugin reports it (the owner's Mac test, 2026-10-29: this panel said
+// "louieknows's Mac" while the others said "Louies-MacBook-Pro.local"; the
+// Mac is "Louie's MacBook Pro"). UXP cannot ask the system for it, so:
+// 1. on a Mac, the Computer Name in macOS's own SystemConfiguration file
+//    (System Settings > General > About);
+// 2. the name the other NOLGIA plugins keep in <NOLGIA data>/computer.json
+//    (the only way on Windows, when another NOLGIA plugin runs here);
+// 3. "<user>'s Mac" or "<user>'s Windows PC".
+const SYSTEM_PREFERENCES = "/Library/Preferences/SystemConfiguration/preferences.plist";
+let machineNameCache = null;
+
+function platformName() {
   try {
-    const os = require("os");
-    for (const fn of ["hostname", "computerName"]) {
-      if (typeof os[fn] === "function") {
-        const name = os[fn]();
-        if (name) return String(name);
-      }
-    }
+    return require("os").platform();
   } catch (err) {
-    // no os module details
+    return "";
   }
-  const home = paths.home();
-  const user = home ? home.split(/[\\/]/).filter(Boolean).pop() : "";
-  let platform = "";
+}
+
+async function readText(nativePath) {
   try {
-    platform = require("os").platform() === "darwin" ? "Mac" : "Windows PC";
+    const entry = await fs.getEntryWithUrl(pathutil.toFileUrl(nativePath));
+    if (!entry || !entry.isFile) return "";
+    return String(await entry.read({ format: formats.utf8 }));
   } catch (err) {
-    platform = "computer";
+    return "";
   }
-  return user ? user + "'s " + platform : platform;
+}
+
+function sharedNameFile(home, platform) {
+  if (!home) return "";
+  const folder = platform === "darwin" ? pathutil.join(pathutil.join(pathutil.join(home, "Library"), "Application Support"), "NOLGIA")
+    : pathutil.join(pathutil.join(pathutil.join(home, "AppData"), "Roaming"), "NOLGIA");
+  return pathutil.join(folder, "computer.json");
+}
+
+async function machineName() {
+  if (machineNameCache) return machineNameCache;
+  const platform = platformName();
+  let name = "";
+  if (platform === "darwin") name = util.computerNameFromSystemPreferences(await readText(SYSTEM_PREFERENCES));
+  if (!name) name = util.computerNameFromSharedFile(await readText(sharedNameFile(paths.home(), platform)));
+  if (!name) {
+    const home = paths.home();
+    const user = home ? home.split(/[\\/]/).filter(Boolean).pop() : "";
+    const kind = platform === "darwin" ? "Mac" : platform === "win32" ? "Windows PC" : "computer";
+    name = user ? user + "'s " + kind : kind;
+  }
+  machineNameCache = name;
+  return name;
 }
 
 function createHost({ onApprovals } = {}) {
@@ -196,6 +228,10 @@ function createHost({ onApprovals } = {}) {
     },
 
     machineName,
+
+    osName() {
+      return util.osName(platformName());
+    },
 
     appVersion: ops.appVersion,
 

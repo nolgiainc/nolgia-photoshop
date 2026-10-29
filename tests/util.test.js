@@ -86,3 +86,46 @@ test("pathutil handles Windows and macOS paths", () => {
   assert.equal(pathutil.toFileUrl("C:\\Users\\me\\a b.psd"), "file:/C:/Users/me/a b.psd");
   assert.equal(pathutil.toFileUrl("/Users/me/a.psd"), "file:/Users/me/a.psd");
 });
+
+// The owner's Mac test (2026-10-29): this panel said "louieknows's Mac", the
+// other plugins "Louies-MacBook-Pro.local"; the Mac is "Louie's MacBook Pro".
+test("a Mac's Computer Name comes from macOS's SystemConfiguration preferences", () => {
+  const plist = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>System</key>
+	<dict>
+		<key>Network</key>
+		<dict>
+			<key>HostNames</key>
+			<dict>
+				<key>LocalHostName</key>
+				<string>Louies-MacBook-Pro</string>
+			</dict>
+		</dict>
+		<key>System</key>
+		<dict>
+			<key>ComputerName</key>
+			<string>Louie’s MacBook Pro</string>
+			<key>ComputerNameEncoding</key>
+			<integer>0</integer>
+		</dict>
+	</dict>
+</dict>
+</plist>`;
+  assert.equal(util.computerNameFromSystemPreferences(plist), "Louie’s MacBook Pro");
+  assert.equal(util.computerNameFromSystemPreferences("<key>ComputerName</key><string>Ada&apos;s &amp; Bo&#8217;s Mac</string>"), "Ada's & Bo’s Mac");
+  assert.equal(util.computerNameFromSystemPreferences("bplist00..."), "", "a binary plist is not read");
+  assert.equal(util.computerNameFromSystemPreferences(""), "");
+});
+
+test("the computer's name the other NOLGIA plugins keep", () => {
+  assert.equal(util.computerNameFromSharedFile('{"name": "DESKTOP-ABC123", "os": "windows", "written_by": "nolgia-adobe 0.2.2"}'), "DESKTOP-ABC123");
+  assert.equal(util.computerNameFromSharedFile("not json"), "");
+  assert.equal(util.computerNameFromSharedFile('{"name": 3}'), "");
+});
+
+test("osName names the operating system the way the API does", () => {
+  assert.deepEqual(["darwin", "win32", "linux", "aix"].map(util.osName), ["macos", "windows", "linux", ""]);
+});

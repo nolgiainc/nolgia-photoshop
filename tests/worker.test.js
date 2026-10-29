@@ -198,3 +198,35 @@ test("switching off ends the long poll, so switching on again gets the next comm
   assert.equal(cmd.status, "succeeded", cmd.error);
   await stop(second.worker);
 });
+
+// An API from before sessions carried the OS refuses the field as unknown;
+// the plugin then stops sending it instead of failing to connect.
+test("an API without the os field still connects", async () => {
+  const { ApiError } = require("../core/api.js");
+  const { BridgeWorker } = require("../core/worker.js");
+  const { ActivityLog } = require("../core/commands.js");
+  const bodies = [];
+  const api = {
+    baseUrl: "https://example.invalid",
+    async registerSession(body) {
+      bodies.push(body);
+      if ("os" in body) throw new ApiError(400, { title: "Bad Request", detail: 'invalid JSON request body: json: unknown field "os"' });
+      return { id: "s-1", poll_wait_seconds: 1 };
+    },
+    async nextCommand() {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      return null;
+    },
+    async deleteSession() {},
+  };
+  const worker = new BridgeWorker({
+    api, executor: null, activity: new ActivityLog(), instanceId: "i", snapshot: () => ({ document: { name: "" } }),
+    machineName: "Ada's MacBook Pro", os: "macos",
+  });
+  assert.equal(worker.payload().os, "macos");
+  worker.start();
+  await connected(worker);
+  assert.ok("os" in bodies[0]);
+  assert.ok(!("os" in bodies[bodies.length - 1]));
+  await stop(worker);
+});

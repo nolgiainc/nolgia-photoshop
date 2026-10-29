@@ -6,7 +6,7 @@
 // `host` (see ps/host.js), so this runs under Node in the tests too.
 "use strict";
 
-const { PLUGIN_VERSION, DEFAULT_API_URL } = require("./constants.js");
+const { APP, PLUGIN_VERSION, DEFAULT_API_URL } = require("./constants.js");
 const { ApiClient, normalizeBaseUrl } = require("./api.js");
 const { DeviceLogin, LoginCancelled, LoginError } = require("./auth.js");
 const { ActivityLog } = require("./commands.js");
@@ -274,7 +274,8 @@ class Controller {
       onStatus: () => this.bump(),
       onAuthFailed: (text) => this._authFailed(text),
       log: (m) => this.log(m),
-      machineName: this.host.machineName(),
+      machineName: await this.host.machineName(),
+      os: this.host.osName ? this.host.osName() : "",
       heartbeatInterval: (this.dev && this.dev.heartbeat_seconds) || 20,
       // A long poll from the last connection may still be waiting on the
       // server for this same session; let it run out before registering.
@@ -365,7 +366,7 @@ class Controller {
   async signIn() {
     if (this.login) return;
     this.message = "";
-    const login = new DeviceLogin(this.api(null));
+    const login = new DeviceLogin(this.api(null), { client: APP });
     const state = new LoginState(login);
     this.login = state;
     this.bump();
