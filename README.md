@@ -2,7 +2,7 @@
 
 NOLGIA's plugin for Photoshop. It connects Photoshop on your computer to
 NOLGIA, so NOLGIA Agent can look at your project, make changes in it, render
-previews and move files between the app and your NOLGIA library. Since 0.2.1
+previews and move files between the app and your NOLGIA library. Since 0.2.2
 the NOLGIA panel has a chat: type what you want done in this Photoshop and
 NOLGIA Agent does it here. Claude, Cursor, Codex and other agents
 connected to NOLGIA's MCP server reach the same commands.
@@ -18,7 +18,7 @@ on, and it lists every command it runs.
 
 A UXP plugin for Photoshop 2024 (25.0) and newer. 0.1.0 was tested on Windows
 with Photoshop 2026 (27.5) and on macOS 26.6 (Apple silicon) with Photoshop
-2026 (27.11), against the mock API. The chat added in 0.2.1 has not been run
+2026 (27.11), against the mock API. The chat added in 0.2.2 has not been run
 on a Mac yet: see "Tested on" below.
 
 ## Install and use
@@ -154,6 +154,10 @@ back as bare text without a line number. The pitfalls Photoshop scripting has
 
 ## Tested on
 
+- **Release numbers:** 0.2.0 and 0.2.1 were never released. They were
+  builds tried in Photoshop, and an installed build of a version can't be
+  replaced by another build of the same version while Photoshop has it
+  loaded.
 - **The chat, first run as the unreleased 0.2.0 build:** Windows 11 with
   Photoshop 2026 (27.5), against the real NOLGIA API, on October 29, 2026:
   - **Install:** 0.2.0 went in with Adobe's installer over 0.1.0. It loaded
@@ -188,7 +192,7 @@ node --test tests/*.test.js
 Build the installable `.ccx` (Python 3, standard library):
 
 ```sh
-python3 build.py                    # dist/nolgia-photoshop-0.2.1.ccx
+python3 build.py                    # dist/nolgia-photoshop-0.2.2.ccx
 python3 build.py --dev-domain http://localhost:8791
                                               # a test build that may also reach a local mock API
 ```
