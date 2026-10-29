@@ -12,6 +12,7 @@ const { DeviceLogin, LoginCancelled, LoginError } = require("./auth.js");
 const { ActivityLog } = require("./commands.js");
 const { Executor, ApprovalRequest } = require("./executor.js");
 const { BridgeWorker, Status } = require("./worker.js");
+const { AgentChat } = require("./chat.js");
 
 const DEFAULT_SETTINGS = { connected: false, allow_agent: true, ask_before_run: false };
 
@@ -47,6 +48,7 @@ class Controller {
     this._listeners = [];
     this._wantConnect = false;
     this._pollBusyUntil = 0;
+    this.chat = new AgentChat(this);
   }
 
   // ---------------------------------------------------------------- settings
@@ -173,7 +175,33 @@ class Controller {
     const wanted = (this.dev && this.dev.autoconnect) || this.settings.connected;
     if (wanted && this.signedIn) await this.connect();
     else if (this.settings.connected) this.setSetting("connected", false);
+    if (this.signedIn) {
+      if (!this.instanceId) this.instanceId = await this.host.instanceId((this.dev && this.dev.instance_id) || null);
+      this.chat.start();
+    }
     this.bump();
+  }
+
+  /** Why the chat cannot send right now, with the one click that fixes it,
+   *  or null. NOLGIA Agent reaches this Photoshop only while it is
+   *  connected and Allow NOLGIA Agent is on. */
+  chatBlocker() {
+    if (!this.signedIn) return null;
+    if (!this.connected) {
+      return { kind: "connect", text: "Turn on Connected so NOLGIA Agent can work in this Photoshop.", label: "Turn on Connected" };
+    }
+    if (!this.settings.allow_agent) {
+      return { kind: "allow_agent", text: "NOLGIA Agent can work here only while Allow NOLGIA Agent is on.", label: "Allow NOLGIA Agent" };
+    }
+    return null;
+  }
+
+  fixChatBlocker() {
+    const blocker = this.chatBlocker();
+    if (!blocker) return null;
+    if (blocker.kind === "connect") return this.connect();
+    if (blocker.kind === "allow_agent") this.setSetting("allow_agent", true);
+    return null;
   }
 
   // ------------------------------------------------------------------- status
@@ -309,9 +337,15 @@ class Controller {
     }
   }
 
+  /** A refused sign in, from the worker or the chat. */
+  authFailed(text) {
+    return this._authFailed(text);
+  }
+
   async _authFailed(text) {
     if (this.usingDevToken) this.dev.token = null;
     else await this._forgetToken();
+    this.chat.reset({ forget: false });
     this.disconnect();
     this.message = text;
     this.bump();
@@ -359,6 +393,8 @@ class Controller {
       await this.host.saveToken(this.tokenRecord);
       this.log("Signed in" + (token.email ? " as " + token.email : "") + ".");
       await this.connect();
+      this.chat.reset({ forget: false });
+      this.chat.start();
     } catch (err) {
       if (this.login === state) this.login = null;
       if (err instanceof LoginCancelled) this.message = "";
@@ -382,6 +418,7 @@ class Controller {
     if (this.dev) this.dev.token = null;
     this.devEmail = "";
     await this._forgetToken();
+    this.chat.reset();
     this.message = "Signed out.";
     this.bump();
   }

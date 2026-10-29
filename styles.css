@@ -188,6 +188,18 @@ body {
   border-color: #ff8a3d;
 }
 
+/* Colours, not opacity: the Photoshop panel ignored opacity here. */
+.btn.disabled {
+  color: rgba(255, 255, 255, 0.4);
+  cursor: default;
+}
+
+.btn.primary.disabled {
+  background-color: #3b2a1f;
+  border-color: #3b2a1f;
+  color: rgba(255, 255, 255, 0.45);
+}
+
 .btn.ghost {
   background-color: transparent;
   border-color: #262c3a;
@@ -336,6 +348,139 @@ body {
 
 .foot.dev {
   color: #f0a33c;
+}
+
+/* The chat with NOLGIA Agent */
+.example {
+  padding: 7px 8px;
+  margin-top: 6px;
+  border-radius: 6px;
+  background-color: #171b26;
+  border: 1px solid #262c3a;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 16px;
+  cursor: pointer;
+}
+
+.example:hover {
+  border-color: #3a4256;
+}
+
+.thread {
+  max-height: 360px;
+  overflow: auto;
+}
+
+.msg {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  line-height: 17px;
+}
+
+.msg.user {
+  background-color: #1e2430;
+  margin-left: 24px;
+}
+
+.msg.agent {
+  background-color: #0d1018;
+  border: 1px solid #1e2430;
+}
+
+.msg .who {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.44);
+  margin-bottom: 4px;
+}
+
+.msg .text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.msg .para {
+  margin-bottom: 6px;
+  word-break: break-word;
+}
+
+.msg .para:last-child {
+  margin-bottom: 0;
+}
+
+.msg .li {
+  padding-left: 10px;
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+
+.msg .bold {
+  font-weight: 700;
+}
+
+.msg .failure {
+  color: #ff6b5e;
+}
+
+.msg .meta {
+  margin-top: 4px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.link,
+.msg .href {
+  color: #ff8a3d;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.link {
+  margin-top: 8px;
+  font-size: 11px;
+}
+
+.options .btn {
+  margin-top: 6px;
+}
+
+.working {
+  margin-top: 8px;
+  color: #f0a33c;
+  line-height: 16px;
+}
+
+.notice {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ff6a1a;
+  background-color: #1a1210;
+  line-height: 16px;
+}
+
+.notice .btn {
+  margin-top: 8px;
+  align-self: flex-start;
+}
+
+/* The margin is spelled out: Photoshop gives a text area 8 px on the left. */
+.chat-input {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: 64px;
+  font-family: inherit;
+  resize: none;
+  margin: 10px 0 0 0;
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #2a3142;
+  background-color: #080b12;
+  color: #ffffff;
+  font-size: 12px;
 }
 
 .hidden {

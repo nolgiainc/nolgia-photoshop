@@ -201,8 +201,8 @@ function createHost({ onApprovals } = {}) {
 
     documentSnapshot: ops.documentSnapshot,
 
-    async openUrl(url) {
-      await uxp.shell.openExternal(url, "Sign in to NOLGIA to connect Photoshop.");
+    async openUrl(url, why = "Sign in to NOLGIA to connect Photoshop.") {
+      await uxp.shell.openExternal(url, why);
     },
 
     async copyText(text) {

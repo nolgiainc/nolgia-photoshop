@@ -8,6 +8,7 @@ const { ApiClient } = require("../core/api.js");
 const { ActivityLog, CAPABILITIES } = require("../core/commands.js");
 const { Executor } = require("../core/executor.js");
 const { BridgeWorker } = require("../core/worker.js");
+const { PLUGIN_VERSION } = require("../core/constants.js");
 const { TOKEN, startMock, call, enqueue, waitCommand, mockState, until } = require("./support.js");
 
 let mock;
@@ -62,7 +63,7 @@ test("registers the full state and keeps heartbeating", async () => {
     instance_id: "worker-test",
     app: "photoshop",
     app_version: "27.5.0",
-    plugin_version: "0.1.0",
+    plugin_version: PLUGIN_VERSION,
     machine_name: "Test PC",
     document: { name: "a.psd", path: "C:\\a.psd" },
     capabilities: CAPABILITIES,
