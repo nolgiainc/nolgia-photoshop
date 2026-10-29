@@ -29,6 +29,9 @@ const EXAMPLES = [
 
 const LINK_WHY = "Open this NOLGIA page in your browser.";
 
+/** Activity rows shown until the person asks for all of them. */
+const ACTIVITY_SHOWN = 5;
+
 function pad(n) {
   return String(n).padStart(2, "0");
 }
@@ -88,11 +91,12 @@ function createPanel(controller, doc) {
     Promise.resolve(controller.host.openUrl(url, LINK_WHY)).catch((err) => controller.log("Could not open " + url + " (" + err + ")."));
   };
   const input = $("chat-input");
-  // The thread follows new rows unless the person scrolled it themselves:
-  // `threadAuto` is where the panel last put it, `followNext` asks to follow
-  // after the person sends.
-  let threadAuto = null;
+  // The panel follows new rows in the thread unless the person scrolled the
+  // panel themselves: `panelAuto` is where the panel last put its scroll,
+  // `followNext` asks to follow after the person sends.
+  let panelAuto = null;
   let followNext = false;
+  let activityAll = false;
 
   function sendText(text) {
     followNext = true;
@@ -242,35 +246,42 @@ function createPanel(controller, doc) {
     const signature = JSON.stringify([view.hidden, view.rows]);
     if (signature !== shownThread) {
       const thread = $("chat-thread");
-      const before = thread.scrollTop;
-      const atEnd = before + thread.clientHeight >= thread.scrollHeight - 24;
-      const personScrolled = threadAuto !== null && Math.abs(before - threadAuto) > 4 && !atEnd;
-      const follow = followNext || !personScrolled;
+      const body = doc.body;
+      const before = body.scrollTop;
+      const personScrolled = panelAuto !== null && Math.abs(before - panelAuto) > 4;
+      const follow = followNext || !personScrolled || shownThread === null;
       followNext = false;
       while (thread.firstChild) thread.removeChild(thread.firstChild);
       if (view.hidden) {
         const more = doc.createElement("div");
-        more.className = "hint";
-        more.textContent = "Earlier messages are on nolgia.ai.";
+        more.className = "link";
+        more.textContent = "Earlier messages are on nolgia.ai";
+        more.addEventListener("click", () => view.sessionUrl && openLink(view.sessionUrl));
         thread.appendChild(more);
       }
       for (const row of view.rows) thread.appendChild(messageNode(row));
       shownThread = signature;
       // After layout (Photoshop measures the new rows a moment later): a
-      // finished reply is read from its start, anything else from the end;
-      // a person who scrolled up stays where they are.
+      // finished reply is shown from its start; while one is on its way the
+      // box and the working line stay in view. A person who scrolled the
+      // panel stays where they are.
       const newest = view.rows[view.rows.length - 1];
       const fromStart = Boolean(newest && newest.role === "agent" && newest.status !== "pending");
       setTimeout(() => {
         try {
           if (!follow) {
-            thread.scrollTop = before;
+            body.scrollTop = before;
             return;
           }
+          const top = body.getBoundingClientRect().top;
           const last = thread.lastChild;
-          if (fromStart && last) thread.scrollTop += last.getBoundingClientRect().top - thread.getBoundingClientRect().top - 8;
-          else thread.scrollTop = thread.scrollHeight;
-          threadAuto = thread.scrollTop;
+          if (fromStart && last) {
+            body.scrollTop += last.getBoundingClientRect().top - top - 8;
+          } else if (input) {
+            const gap = input.getBoundingClientRect().bottom - (top + body.clientHeight) + 12;
+            if (gap > 0) body.scrollTop += gap;
+          }
+          panelAuto = body.scrollTop;
         } catch (err) {
           // scrolling is a nicety
         }
@@ -347,9 +358,9 @@ function createPanel(controller, doc) {
     show("btn-pause", signedIn);
     $("btn-pause").textContent = controller.connected ? "Pause" : "Resume";
     const list = $("activity-list");
-    const listTop = list.scrollTop;
     while (list.firstChild) list.removeChild(list.firstChild);
-    const items = controller.activity.items();
+    const all = controller.activity.items();
+    const items = activityAll ? all : all.slice(0, ACTIVITY_SHOWN);
     if (!items.length) {
       const empty = doc.createElement("div");
       empty.className = "empty";
@@ -374,7 +385,16 @@ function createPanel(controller, doc) {
       row.appendChild(status);
       list.appendChild(row);
     }
-    list.scrollTop = listTop;
+    if (all.length > ACTIVITY_SHOWN) {
+      const more = doc.createElement("div");
+      more.className = "link act-more";
+      more.textContent = activityAll ? "Show fewer" : "Show all " + all.length;
+      more.addEventListener("click", () => {
+        activityAll = !activityAll;
+        schedule();
+      });
+      list.appendChild(more);
+    }
 
     renderChat();
 

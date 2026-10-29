@@ -25,7 +25,8 @@ const { APP, AGENT_URL, BILLING_URL, COST_LINE, COST_LINE_RATE } = require("./co
 
 const MAX_CHARS = 8000; // SubmitAgentMessageRequest.content
 const SESSION_NAME_MAX = 80;
-const ROWS_SHOWN = 40;
+// The panel shows the newest rows only; the whole chat is on nolgia.ai.
+const ROWS_SHOWN = 10;
 const WAKE_EVERY = 10 * 60; // seconds between wake calls, like the site's chat
 
 /** How long to wait before the next read of a pending reply: quick at

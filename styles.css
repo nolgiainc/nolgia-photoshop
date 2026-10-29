@@ -3,9 +3,13 @@
 /* NOLGIA look: navy canvas, white ink, one orange primary action,
    rounded-square shapes (never pills). */
 
-/* The body is the scroll container. Photoshop grows html and body to fit
-   their content, so in 0.2.0 nothing scrolled and a long chat pushed
-   Activity and Sign out out of reach. */
+/* The body is the panel's one scroller. Photoshop grows html and body to
+   fit their content, so in 0.2.0 nothing scrolled and a long chat pushed
+   Activity and Sign out out of reach. Nothing inside scrolls on its own:
+   Photoshop gives a panel no wheel events and does not hand the wheel on
+   from an inner scroller that reached its end, so an inner scroller under
+   the cursor stopped the panel from scrolling (seen in 0.2.1's first
+   build). */
 html,
 body {
   height: 100%;
@@ -26,11 +30,10 @@ body {
   background-color: #0a0d14;
 }
 
-/* Activity keeps 20 commands: it scrolls on its own past a few. */
-#activity-list {
-  max-height: 220px;
-  overflow-y: auto;
-  padding-right: 12px;
+/* Activity shows the newest few; Show all opens the rest in place. */
+.act-more {
+  margin-top: 6px;
+  font-size: 11px;
 }
 
 .top {
@@ -379,11 +382,6 @@ body {
 
 .example:hover {
   border-color: #3a4256;
-}
-
-.thread {
-  max-height: 360px;
-  overflow: auto;
 }
 
 .msg {

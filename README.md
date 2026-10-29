@@ -84,9 +84,15 @@ the same chats as nolgia.ai/agent:
   "You can also use Claude, Cursor, Codex or another agent with NOLGIA
   connected" (the agents nolgia.ai/mcp documents). Each reply shows what it
   cost.
-- **Scrolling:** the panel scrolls as a whole at any size, the chat thread
-  and the Activity list each scroll on their own, and the thread follows
-  new replies unless you scrolled it up yourself.
+- **Scrolling:** the panel is one scroller at any size, so the mouse wheel
+  works anywhere over it. Photoshop gives a panel no wheel events and does
+  not pass the wheel on from an inner scroller that reached its end, so
+  nothing inside scrolls on its own:
+  - the thread shows the newest 10 messages, and older ones open on
+    nolgia.ai;
+  - Activity shows the newest 5 commands, with Show all;
+  - a new reply scrolls the panel to its start, unless you scrolled the
+    panel yourself.
 - **No Agent or no credits:** if your account has no NOLGIA Agent yet, or no
   credits left, the card says so, with a link to nolgia.ai.
 
