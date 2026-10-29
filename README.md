@@ -158,6 +158,20 @@ back as bare text without a line number. The pitfalls Photoshop scripting has
   builds tried in Photoshop, and an installed build of a version can't be
   replaced by another build of the same version while Photoshop has it
   loaded.
+- **0.2.2:** Windows 11 with Photoshop 2026 (27.5), against the real NOLGIA
+  API, on October 29, 2026. This exact build was installed with Adobe's
+  installer. Updating while Photoshop is open: see Install and use. Checked
+  there:
+  - **Sign in:** the panel signed in and connected.
+  - **Cost line:** gives this account's rate: "each turn from 70 credits on
+    your model".
+  - **Wheel:** scrolled the panel with the cursor over the thread, over
+    Activity and over the box, at 241x320 (the minimum), 321x600 and 391x798
+    (floating). With the cursor held mid panel, it went from the top to the
+    end at each size.
+  - **Activity:** shows 5 commands, with Show all and Show fewer.
+  - **No Agent turn on 0.2.2 itself:** the send and reply path is the one
+    the 0.2.0 build ran below.
 - **The chat, first run as the unreleased 0.2.0 build:** Windows 11 with
   Photoshop 2026 (27.5), against the real NOLGIA API, on October 29, 2026:
   - **Install:** 0.2.0 went in with Adobe's installer over 0.1.0. It loaded
