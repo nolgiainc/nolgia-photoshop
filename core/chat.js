@@ -619,7 +619,7 @@ class AgentChat {
     if (this.sending) working = "Sending...";
     else if (pending.length) {
       const row = pending[pending.length - 1];
-      if (row.queued) working = "Waiting for a free turn. Your other NOLGIA Agent chats are still running.";
+      if (row.queued) working = "Waiting for its turn. Your other NOLGIA Agent chats are still running.";
       else if (this._agentSleeping()) working = "Waking up NOLGIA Agent. This takes about a minute.";
       else working = "NOLGIA Agent is working. What it does in Photoshop shows in Activity below.";
     }

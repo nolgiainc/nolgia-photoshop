@@ -8,7 +8,7 @@
 "use strict";
 
 module.exports = {
-  PLUGIN_VERSION: "0.2.0",
+  PLUGIN_VERSION: "0.2.1",
   PLUGIN_ID: "com.nolgia.photoshop",
   APP: "photoshop",
   DEFAULT_API_URL: "https://api.nolgia.ai/v1",
@@ -18,9 +18,10 @@ module.exports = {
   AGENT_URL: "https://nolgia.ai/agent",
   BILLING_URL: "https://nolgia.ai/billing",
   MCP_URL: "https://nolgia.ai/mcp",
-  // What a NOLGIA Agent turn costs: the person's own rate when NOLGIA tells
-  // it (GET /agent/models for the Agent's brain), else the site's words
-  // (desktopAppCostLine).
-  COST_LINE: "NOLGIA Agent turns cost from 10 credits each. With your own agent, like Claude or Cursor, the work in Photoshop is free.",
-  COST_LINE_RATE: "Each NOLGIA Agent turn costs from {credits} credits on your model. With your own agent, like Claude or Cursor, the work in Photoshop is free.",
+  // The line under the chat box: NOLGIA Agent first, with what a turn costs
+  // on the person's own model (GET /agent/models for the Agent's brain), or
+  // the lowest rate when NOLGIA does not say; then the agents NOLGIA's MCP
+  // page documents (nolgia.ai/mcp: Claude Code and Cursor).
+  COST_LINE: "NOLGIA Agent works right here, each turn from 10 credits. You can also use Claude Code, Cursor or another agent with NOLGIA connected.",
+  COST_LINE_RATE: "NOLGIA Agent works right here, each turn from {credits} credits on your model. You can also use Claude Code, Cursor or another agent with NOLGIA connected.",
 };

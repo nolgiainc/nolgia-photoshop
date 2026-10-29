@@ -88,12 +88,22 @@ function createPanel(controller, doc) {
     Promise.resolve(controller.host.openUrl(url, LINK_WHY)).catch((err) => controller.log("Could not open " + url + " (" + err + ")."));
   };
   const input = $("chat-input");
+  // The thread follows new rows unless the person scrolled it themselves:
+  // `threadAuto` is where the panel last put it, `followNext` asks to follow
+  // after the person sends.
+  let threadAuto = null;
+  let followNext = false;
+
+  function sendText(text) {
+    followNext = true;
+    return controller.chat.send(text);
+  }
 
   function sendFromBox() {
     if (!input || controller.chatBlocker() || controller.chat.busy) return;
     const text = String(input.value || "");
     if (!text.trim()) return;
-    controller.chat.send(text).then((sent) => {
+    sendText(text).then((sent) => {
       if (sent && input.value === text) input.value = "";
     });
   }
@@ -175,7 +185,7 @@ function createPanel(controller, doc) {
     if (row.status === "pending") {
       const text = doc.createElement("div");
       text.className = "text";
-      text.textContent = row.queued ? "Waiting for a free turn..." : "Working...";
+      text.textContent = row.queued ? "Waiting for its turn..." : "Working...";
       box.appendChild(text);
       return box;
     }
@@ -201,7 +211,7 @@ function createPanel(controller, doc) {
         btn.className = "btn small";
         btn.textContent = option.label;
         btn.addEventListener("click", () => {
-          if (!controller.chatBlocker() && !controller.chat.busy) controller.chat.send(option.label);
+          if (!controller.chatBlocker() && !controller.chat.busy) sendText(option.label);
         });
         options.appendChild(btn);
       }
@@ -232,6 +242,11 @@ function createPanel(controller, doc) {
     const signature = JSON.stringify([view.hidden, view.rows]);
     if (signature !== shownThread) {
       const thread = $("chat-thread");
+      const before = thread.scrollTop;
+      const atEnd = before + thread.clientHeight >= thread.scrollHeight - 24;
+      const personScrolled = threadAuto !== null && Math.abs(before - threadAuto) > 4 && !atEnd;
+      const follow = followNext || !personScrolled;
+      followNext = false;
       while (thread.firstChild) thread.removeChild(thread.firstChild);
       if (view.hidden) {
         const more = doc.createElement("div");
@@ -242,14 +257,20 @@ function createPanel(controller, doc) {
       for (const row of view.rows) thread.appendChild(messageNode(row));
       shownThread = signature;
       // After layout (Photoshop measures the new rows a moment later): a
-      // finished reply is read from its start, anything else from the end.
+      // finished reply is read from its start, anything else from the end;
+      // a person who scrolled up stays where they are.
       const newest = view.rows[view.rows.length - 1];
       const fromStart = Boolean(newest && newest.role === "agent" && newest.status !== "pending");
       setTimeout(() => {
         try {
+          if (!follow) {
+            thread.scrollTop = before;
+            return;
+          }
           const last = thread.lastChild;
           if (fromStart && last) thread.scrollTop += last.getBoundingClientRect().top - thread.getBoundingClientRect().top - 8;
           else thread.scrollTop = thread.scrollHeight;
+          threadAuto = thread.scrollTop;
         } catch (err) {
           // scrolling is a nicety
         }
@@ -326,6 +347,7 @@ function createPanel(controller, doc) {
     show("btn-pause", signedIn);
     $("btn-pause").textContent = controller.connected ? "Pause" : "Resume";
     const list = $("activity-list");
+    const listTop = list.scrollTop;
     while (list.firstChild) list.removeChild(list.firstChild);
     const items = controller.activity.items();
     if (!items.length) {
@@ -352,6 +374,7 @@ function createPanel(controller, doc) {
       row.appendChild(status);
       list.appendChild(row);
     }
+    list.scrollTop = listTop;
 
     renderChat();
 

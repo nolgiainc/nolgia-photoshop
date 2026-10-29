@@ -3,7 +3,16 @@
 /* NOLGIA look: navy canvas, white ink, one orange primary action,
    rounded-square shapes (never pills). */
 
+/* The body is the scroll container. Photoshop grows html and body to fit
+   their content, so in 0.2.0 nothing scrolled and a long chat pushed
+   Activity and Sign out out of reach. */
+html,
 body {
+  height: 100%;
+}
+
+body {
+  overflow-y: auto;
   background-color: #0a0d14;
   color: #ffffff;
   font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
@@ -14,8 +23,14 @@ body {
 
 #app {
   padding: 12px 12px 16px 12px;
-  min-height: 100vh;
   background-color: #0a0d14;
+}
+
+/* Activity keeps 20 commands: it scrolls on its own past a few. */
+#activity-list {
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 12px;
 }
 
 .top {

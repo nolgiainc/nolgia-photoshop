@@ -301,15 +301,15 @@ test("the cost line names this account's own turn rate, read from its brain", as
   // No brain chosen: the default brain's rate.
   let chat = newChat(owner());
   await chat.start();
-  assert.equal(chat.view().costLine, "Each NOLGIA Agent turn costs from 10 credits on your model. With your own agent, like Claude or Cursor, the work in Photoshop is free.");
+  assert.equal(chat.view().costLine, "NOLGIA Agent works right here, each turn from 10 credits on your model. You can also use Claude Code, Cursor or another agent with NOLGIA connected.");
   // A premium brain: its rate.
   await mockAgent({ model: "claude-opus-5-5" });
   chat = newChat(owner());
   await chat.start();
-  assert.equal(chat.view().costLine, "Each NOLGIA Agent turn costs from 70 credits on your model. With your own agent, like Claude or Cursor, the work in Photoshop is free.");
+  assert.equal(chat.view().costLine, "NOLGIA Agent works right here, each turn from 70 credits on your model. You can also use Claude Code, Cursor or another agent with NOLGIA connected.");
   // New chat keeps it.
   chat.newChat();
-  assert.match(chat.view().costLine, /from 70 credits on your model/);
+  assert.match(chat.view().costLine, /each turn from 70 credits on your model/);
   // The catalogue does not answer, or names no such brain: the site's words.
   await mockAgent({ models_error: true });
   chat = newChat(owner());
@@ -357,5 +357,6 @@ test("the panel's chat needs Connected and Allow NOLGIA Agent, one click each", 
     await ctl.signOut();
   }
   assert.equal(host.remembered.chat, null, "signing out forgets the chat on this computer");
-  assert.match(COST_LINE, /from 10 credits each/);
+  assert.match(COST_LINE, /^NOLGIA Agent works right here, each turn from 10 credits\./);
+  assert.doesNotMatch(COST_LINE + " " + require("../core/constants.js").COST_LINE_RATE, /free/i, "the panel never says the work is free elsewhere");
 });
