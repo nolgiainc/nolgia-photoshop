@@ -19,6 +19,22 @@ const { ApiError, NetworkError, Unauthorized } = require("./api.js");
 const { CAPABILITIES, Command, CommandError, resultBody, validate } = require("./commands.js");
 const { Backoff, Signal, oneLine } = require("./util.js");
 
+// After a network failure the plugin is back within NETWORK_RETRY_MAX seconds
+// of the network (the owner's Mac test 4, 2026-10-30: Photoshop and After
+// Effects dropped off the connected list while macOS showed another Space;
+// After Effects was silent for 5 minutes, long enough for commands sent to it
+// to expire):
+// - the first network failure after a working connection is tried again at
+//   once, on a new connection;
+// - after that, network failures wait at most NETWORK_RETRY_MAX seconds
+//   (with jitter), not the 60 s an overloaded NOLGIA (429, 5xx) still gets;
+// - a failed heartbeat's wait also ends as soon as a poll gets through;
+// - a heartbeat that is due is also sent each time a poll comes back. A
+//   poll's answer is network input, which wakes the app even when its timers
+//   are slowed (macOS App Nap slows the timers of an app it does not show),
+//   so the session stays live while polls keep coming back.
+const NETWORK_RETRY_MAX = 10;
+
 // The API's limits on POST /bridge/sessions fields (characters).
 const MAX_VERSION = 64;
 const MAX_MACHINE_NAME = 128;
@@ -53,6 +69,7 @@ class BridgeWorker {
     onAuthFailed = null,
     log = null,
     heartbeatInterval = 20,
+    networkRetryMax = NETWORK_RETRY_MAX,
     machineName = "",
     os = "",
     clock = () => Date.now() / 1000,
@@ -70,6 +87,8 @@ class BridgeWorker {
     this.onAuthFailed = onAuthFailed || (() => {});
     this.log = log || (() => {});
     this.heartbeatInterval = heartbeatInterval;
+    this.networkRetryMax = networkRetryMax;
+    this.lastHeartbeatAt = 0;
     this.machineName = machineName;
     this.os = os;
     // An API from before sessions carried the OS refuses the field; then the
@@ -180,6 +199,19 @@ class BridgeWorker {
     return this._stop.wait(seconds * 1000);
   }
 
+  /** How long to wait after a failed request (see NETWORK_RETRY_MAX); null
+   *  means try again at once. */
+  _retryDelay(err, backoff, streak) {
+    if (err instanceof NetworkError) {
+      if (streak.first) {
+        streak.first = false;
+        return null;
+      }
+      return Math.min(backoff.next(), this.networkRetryMax);
+    }
+    return err.retryAfter || backoff.next();
+  }
+
   /** The full state, every time: the API resets fields left out. */
   payload() {
     const snap = this.snapshot() || {};
@@ -224,6 +256,7 @@ class BridgeWorker {
 
   async _heartbeatLoop() {
     const backoff = new Backoff(1, 60);
+    const streak = { first: true };
     try {
       if (this.startDelay > 0) {
         this._setStatus(Status.CONNECTING, "Reconnecting to NOLGIA...");
@@ -243,10 +276,15 @@ class BridgeWorker {
               this.sendOs = false;
               continue;
             }
-            const delay = err.retryAfter || backoff.next();
+            const delay = this._retryDelay(err, backoff, streak);
+            if (delay === null) {
+              this.log("The connection to NOLGIA broke (" + err.message + "); trying again at once.");
+              continue;
+            }
             this._setStatus(Status.RETRYING, this._retryText(err, delay));
             this.log(this.statusText);
-            await this._wait(delay);
+            this._wake.clear();
+            await Promise.race([this._wait(delay), this._wake.wait(delay * 1000)]); // a poll that gets through ends it
             continue;
           }
           throw err;
@@ -261,6 +299,8 @@ class BridgeWorker {
           continue;
         }
         backoff.reset();
+        streak.first = true;
+        this.lastHeartbeatAt = this.clock();
         let wait = Number(data.poll_wait_seconds || session.poll_wait_seconds || 25);
         wait = Number.isFinite(wait) ? Math.max(1, Math.min(25, Math.floor(wait))) : 25;
         const first = this.sessionId !== sessionId;
@@ -299,6 +339,7 @@ class BridgeWorker {
 
   async _pollLoop() {
     const backoff = new Backoff(1, 60);
+    const streak = { first: true };
     try {
       while (!this._stop.isSet) {
         if (!(await this._sessionReady.wait(500))) continue;
@@ -332,7 +373,8 @@ class BridgeWorker {
             continue;
           }
           if (err instanceof NetworkError) {
-            const delay = backoff.next();
+            const delay = this._retryDelay(err, backoff, streak);
+            if (delay === null) continue; // at once, on a new connection
             this._setStatus(Status.RETRYING, this._retryText(err, delay));
             await this._wait(delay);
             this._wake.set(); // re-check the session as soon as we are back
@@ -341,6 +383,8 @@ class BridgeWorker {
           throw err;
         }
         backoff.reset();
+        streak.first = true;
+        if (this.clock() - this.lastHeartbeatAt >= this.heartbeatInterval) this._wake.set();
         if (this.state === Status.RETRYING) this._setStatus(Status.CONNECTED, CONNECTED_TEXT);
         if (data) await this._handle(new Command(data, undefined, this.clock));
       }

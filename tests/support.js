@@ -12,8 +12,9 @@ const REPO = path.resolve(__dirname, ".."); // the plugin is the repository's ro
 const TOKEN = "unit-token";
 
 /** Start the mock API on a free port. Resolves to {baseUrl, rootUrl, stop}. */
-function startMock({ tokens = [TOKEN], deviceInterval = null, autoApproveAfter = null } = {}) {
+function startMock({ tokens = [TOKEN], deviceInterval = null, autoApproveAfter = null, pollWaitSeconds = null } = {}) {
   const args = [path.join(REPO, "tools", "mock_bridge_server.py"), "--port", "0"];
+  if (pollWaitSeconds !== null) args.push("--poll-wait-seconds", String(pollWaitSeconds));
   for (const token of tokens) args.push("--token", token);
   if (deviceInterval !== null) args.push("--device-interval", String(deviceInterval));
   if (autoApproveAfter !== null) args.push("--auto-approve-after", String(autoApproveAfter));
