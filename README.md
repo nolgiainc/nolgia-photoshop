@@ -157,6 +157,20 @@ back as bare text without a line number. The pitfalls Photoshop scripting has
 
 ## Tested on
 
+- **0.2.5:** reconnecting, from the owner's fourth Mac test, where Photoshop
+  and After Effects dropped off the connected list while macOS showed another
+  Space (After Effects was silent for 5 minutes). The plugin backed off up to
+  60 s between tries, and on a Mac an app macOS does not show has its timers
+  slowed (App Nap). Now the first network failure after a working connection
+  is tried again at once; after that, network failures wait at most 10 s
+  (NOLGIA's own 429 and 5xx still up to 60 s); a failed heartbeat's wait
+  ends as soon as a poll gets through; and a heartbeat that is due is also
+  sent each time a poll comes back, since a poll's answer is network input,
+  which wakes the app however slow its timers are. Unit tests with a relay
+  that breaks every connection or refuses them for a while: a broken
+  connection was back at once, and after a 9 s outage the plugin was back
+  within 3.5 s of the network (0.2.4: 4.6 s, and up to 60 s after a long
+  one). Not run in Photoshop; on macOS it waits for its re-test.
 - **0.2.4:** a request is answered only by a deliberate click (from the
   owner's third Mac test, where a request in the Resolve plugin was approved
   with nobody clicking), and the panel's Run code answers the request shown
@@ -233,7 +247,7 @@ node --test tests/*.test.js
 Build the installable `.ccx` (Python 3, standard library):
 
 ```sh
-python3 build.py                    # dist/nolgia-photoshop-0.2.4.ccx
+python3 build.py                    # dist/nolgia-photoshop-0.2.5.ccx
 python3 build.py --dev-domain http://localhost:8791
                                               # a test build that may also reach a local mock API
 ```

@@ -230,3 +230,124 @@ test("an API without the os field still connects", async () => {
   assert.ok(!("os" in bodies[bodies.length - 1]));
   await stop(worker);
 });
+
+// ---- reconnecting (the owner's Mac test 4: dropped off the connected list)
+
+const net = require("node:net");
+
+/** A TCP relay in front of the mock that can break every open connection or
+ *  refuse new ones (an outage). */
+function relay(target) {
+  const url = new URL(target.rootUrl);
+  const sockets = new Set();
+  let refusing = false;
+  const srv = net.createServer((client) => {
+    if (refusing) {
+      client.destroy();
+      return;
+    }
+    const upstream = net.connect(Number(url.port), url.hostname);
+    for (const s of [client, upstream]) {
+      sockets.add(s);
+      s.on("error", () => {});
+      s.on("close", () => sockets.delete(s));
+    }
+    client.pipe(upstream).pipe(client);
+    client.on("close", () => upstream.destroy());
+    upstream.on("close", () => client.destroy());
+  });
+  return new Promise((resolve) => {
+    srv.listen(0, "127.0.0.1", () => {
+      resolve({
+        baseUrl: "http://127.0.0.1:" + srv.address().port + "/v1",
+        breakAll: () => {
+          for (const s of sockets) s.destroy();
+        },
+        outage: (on) => {
+          refusing = on;
+          if (on) for (const s of sockets) s.destroy();
+        },
+        close: () => {
+          for (const s of sockets) s.destroy();
+          srv.close();
+        },
+      });
+    });
+  });
+}
+
+function relayed(baseUrl, extra = {}) {
+  const activity = new ActivityLog();
+  const logs = [];
+  const executor = new Executor({
+    run: async (cmd) => ({ ok: true, result: { kind: cmd.kind }, error: null }),
+    onStatus: (id, status) => activity.update(id, status),
+  });
+  const worker = new BridgeWorker(Object.assign({
+    api: new ApiClient({ baseUrl, token: TOKEN }),
+    executor,
+    activity,
+    instanceId: "relay-test",
+    snapshot: () => ({ document: { name: "" }, allow_agent: true, app_version: "27.11.0" }),
+    log: (text) => logs.push(text),
+    machineName: "Test PC",
+  }, extra));
+  worker.logs = logs;
+  return worker;
+}
+
+test("a connection that breaks mid-request is tried again at once", async () => {
+  const r = await relay(mock);
+  const worker = relayed(r.baseUrl);
+  worker.start();
+  try {
+    await connected(worker);
+    const sid = worker.sessionId;
+    r.breakAll();
+    const t0 = Date.now();
+    const done = await waitCommand(mock, await enqueue(mock, "info"));
+    assert.equal(done.status, "succeeded");
+    assert.ok(Date.now() - t0 < 4000, "took " + (Date.now() - t0) + " ms");
+    assert.equal(worker.sessionId, sid);
+  } finally {
+    await stop(worker);
+    r.close();
+  }
+});
+
+test("back within the retry limit once an outage ends, however long it was", async () => {
+  const r = await relay(mock);
+  const worker = relayed(r.baseUrl, { networkRetryMax: 2 });
+  worker.start();
+  try {
+    await connected(worker);
+    r.outage(true);
+    await until(() => worker.state === "retrying", { what: "retrying" });
+    await new Promise((res) => setTimeout(res, 9000));
+    r.outage(false);
+    const t0 = Date.now();
+    await until(() => worker.state === "connected", { what: "connected again" });
+    const back = Date.now() - t0;
+    assert.ok(back <= 3500, "back after " + back + " ms");
+    assert.equal((await waitCommand(mock, await enqueue(mock, "info"))).status, "succeeded");
+    assert.ok(worker.logs.some((l) => /Trying again in [12] s\./.test(l)), worker.logs.join("\n"));
+  } finally {
+    await stop(worker);
+    r.close();
+  }
+});
+
+test("a heartbeat that is due goes out when a poll comes back, even if its timer is late", async () => {
+  const quick = await startMock({ pollWaitSeconds: 1 });
+  const worker = relayed(quick.baseUrl, { heartbeatInterval: 1000 });
+  worker.start();
+  try {
+    await connected(worker);
+    const first = worker.lastHeartbeatAt;
+    worker.heartbeatInterval = 2; // due after 2 s; only a poll's answer can wake it now
+    await until(() => worker.lastHeartbeatAt > first, { timeout: 8000, what: "a heartbeat from a poll" });
+  } finally {
+    await stop(worker);
+    await quick.stop();
+  }
+});
