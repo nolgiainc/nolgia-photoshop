@@ -53,6 +53,10 @@ Settings in the NOLGIA panel:
   only the agent apps you run yourself.
 - **Ask before running code**: show every piece of code NOLGIA wants to run, in
   a window and in the panel, and wait for you to click Run code or Deny.
+  Only a click answers: the buttons turn on 1 second after a request shows,
+  the pointer has to go down and up on the button after that, no key ever
+  answers, and the panel's buttons answer the request shown on the card.
+  Every answer and every ignored click is logged with its request.
 - **Sign out**: disconnect and forget the sign in on this computer (the token
   is kept in UXP secure storage, encrypted by your system).
 
@@ -153,6 +157,17 @@ back as bare text without a line number. The pitfalls Photoshop scripting has
 
 ## Tested on
 
+- **0.2.4:** a request is answered only by a deliberate click (from the
+  owner's third Mac test, where a request in the Resolve plugin was approved
+  with nobody clicking), and the panel's Run code answers the request shown
+  on the card rather than whatever was first in the queue. Unit tests, and
+  the panel and approval window in headless Chromium driven by Playwright's
+  real mouse and keyboard (the same DOM code, not UXP): 0.2.3 approved a
+  click 0.3 s after a request showed (card and window), a press at 0.3 s
+  released at 1.5 s, and a press made for one request whose release landed
+  after the card switched to the next; 0.2.4 approved none of these, nor a
+  key, and approved a click 1.5 s after a request showed. Not run in
+  Photoshop; on macOS it waits for its re-test.
 - **0.2.3:** fixes from the owner's Mac test of 0.2.2. The panel reports the
   computer's own name (on a Mac the Computer Name from System Settings >
   General > About, read from macOS's SystemConfiguration preferences; on
@@ -218,7 +233,7 @@ node --test tests/*.test.js
 Build the installable `.ccx` (Python 3, standard library):
 
 ```sh
-python3 build.py                    # dist/nolgia-photoshop-0.2.3.ccx
+python3 build.py                    # dist/nolgia-photoshop-0.2.4.ccx
 python3 build.py --dev-domain http://localhost:8791
                                               # a test build that may also reach a local mock API
 ```
