@@ -9,7 +9,12 @@
 //
 // One <dialog> element is kept for the plugin's lifetime and filled for each
 // request: UXP complains when a dialog node is removed while it closes.
+// Run code and Deny answer only a deliberate click (ui/arming.js): off for a
+// second each time a request shows, the pointer going down on the button
+// after that, never a key.
 "use strict";
+
+const { armButtons } = require("./arming.js");
 
 const MAX_CODE_CHARS = 20000;
 
@@ -23,6 +28,7 @@ function el(doc, tag, className, text) {
 function createApprovalWindow(doc, log = () => {}) {
   let parts = null;
   let current = null; // id of the request the window shows
+  let arm = null;
   const shown = new Set();
 
   function build() {
@@ -37,8 +43,13 @@ function createApprovalWindow(doc, log = () => {}) {
     const row = el(doc, "div", "row");
     const approve = el(doc, "div", "btn primary", "Run code");
     const deny = el(doc, "div", "btn", "Deny");
-    approve.addEventListener("click", () => dialog.close("approve"));
-    deny.addEventListener("click", () => dialog.close("deny"));
+    arm = armButtons(approve, deny, {
+      answer: (id, ok) => {
+        if (id === current) dialog.close(ok ? "approve" : "deny");
+      },
+      log,
+      label: () => approve.textContent,
+    });
     row.appendChild(approve);
     row.appendChild(deny);
     body.appendChild(row);
@@ -64,9 +75,13 @@ function createApprovalWindow(doc, log = () => {}) {
     parts.approve.textContent = pending.request.approveLabel;
     const id = pending.id;
     current = id;
+    arm.show(id);
     const settle = (answer) => {
       log("The approval window closed (" + answer + ").");
-      if (current === id) current = null;
+      if (current === id) {
+        current = null;
+        arm.hide();
+      }
       if (answer === "approve") controller.approve(id);
       else if (answer === "deny") controller.deny(id);
       update(controller.executor.approvals, controller); // the next request, if one waits

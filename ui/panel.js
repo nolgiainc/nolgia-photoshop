@@ -7,6 +7,7 @@
 
 const { ActivityLog } = require("../core/commands.js");
 const { AGENT_URL } = require("../core/constants.js");
+const { armButtons } = require("./arming.js");
 
 const CHIP_TEXT = {
   off: "Off",
@@ -77,13 +78,13 @@ function createPanel(controller, doc) {
   on("tg-connected", () => (controller.connected ? controller.disconnect() : controller.connect()));
   on("tg-allow-agent", () => controller.setSetting("allow_agent", !controller.settings.allow_agent));
   on("tg-ask", () => controller.setSetting("ask_before_run", !controller.settings.ask_before_run));
-  on("btn-approve", () => {
-    const pending = controller.executor.approvals[0];
-    if (pending) controller.approve(pending.id);
-  });
-  on("btn-deny", () => {
-    const pending = controller.executor.approvals[0];
-    if (pending) controller.deny(pending.id);
+  // The card's Run code and Deny answer the request shown on the card (never
+  // whatever is first in the queue at the time), and only a deliberate click
+  // (ui/arming.js).
+  const cardButtons = armButtons($("btn-approve"), $("btn-deny"), {
+    answer: (id, ok) => (ok ? controller.approve(id) : controller.deny(id)),
+    log: (m) => controller.log(m),
+    label: () => $("btn-approve").textContent,
   });
 
   const openLink = (url) => {
@@ -346,6 +347,7 @@ function createPanel(controller, doc) {
     if (pending) {
       $("approval-title").textContent = pending.request.title;
       $("btn-approve").textContent = pending.request.approveLabel;
+      if (cardButtons.shownId() !== pending.id) cardButtons.show(pending.id);
       if (shownCode !== pending.id) {
         const code = pending.request.code || pending.request.lines.join("\n");
         $("approval-code").textContent = code.length > MAX_CODE_CHARS ? code.slice(0, MAX_CODE_CHARS) + "\n..." : code;
@@ -353,6 +355,7 @@ function createPanel(controller, doc) {
       }
     } else {
       shownCode = null;
+      if (cardButtons.shownId() !== null) cardButtons.hide();
     }
 
     show("btn-pause", signedIn);
