@@ -7,7 +7,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { ApiClient } = require("../core/api.js");
-const { AgentChat, formatReply, sessionName, timeKey, failureText, turnRate, MAX_CHARS } = require("../core/chat.js");
+const { AgentChat, formatReply, sessionName, timeKey, failureText, turnRate, costLine, MAX_CHARS } = require("../core/chat.js");
 const { Controller } = require("../core/controller.js");
 const { AGENT_URL, BILLING_URL, COST_LINE } = require("../core/constants.js");
 const { TOKEN, startMock, call, mockState, until, fakeHost } = require("./support.js");
@@ -297,19 +297,22 @@ test("the poll timer runs as a plain call, as UXP's and browsers' setTimeout req
   }
 });
 
-test("the cost line names this account's own turn rate, read from its brain", async () => {
-  // No brain chosen: the default brain's rate.
+test("the cost line names what a turn typically costs on this account's brain, and the cap", async () => {
+  // No brain chosen: the default brain's typical turn.
   let chat = newChat(owner());
   await chat.start();
-  assert.equal(chat.view().costLine, "NOLGIA Agent works right here, each turn from 10 credits on your model. You can also use Claude, Cursor, Codex or another agent with NOLGIA connected.");
-  // A premium brain: its rate.
+  assert.equal(chat.view().costLine, "NOLGIA Agent works right here, about 10 credits a turn on your model, never more than 200 for its own work. You can also use Claude, Cursor, Codex or another agent with NOLGIA connected.");
+  // A premium brain: its typical turn.
   await mockAgent({ model: "claude-opus-5-5" });
   chat = newChat(owner());
   await chat.start();
-  assert.equal(chat.view().costLine, "NOLGIA Agent works right here, each turn from 70 credits on your model. You can also use Claude, Cursor, Codex or another agent with NOLGIA connected.");
+  assert.equal(chat.view().costLine, "NOLGIA Agent works right here, about 120 credits a turn on your model, never more than 200 for its own work. You can also use Claude, Cursor, Codex or another agent with NOLGIA connected.");
   // New chat keeps it.
   chat.newChat();
-  assert.match(chat.view().costLine, /each turn from 70 credits on your model/);
+  assert.match(chat.view().costLine, /about 120 credits a turn on your model/);
+  // An API that publishes only the flat rate keeps the old line; nothing claims the Agent asks first.
+  assert.match(costLine(turnRate({ model: "claude-opus-5-5" }, [{ model: "claude-opus-5-5", turn_credits: 70, default: false }])), /each turn from 70 credits on your model\./);
+  assert.doesNotMatch(costLine({ rate: 70, typical: 120, cap: 200 }), /without asking/);
   // The catalogue does not answer, or names no such brain: the site's words.
   await mockAgent({ models_error: true });
   chat = newChat(owner());

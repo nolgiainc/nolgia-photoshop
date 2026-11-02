@@ -81,9 +81,13 @@ the same chats as nolgia.ai/agent:
   Photoshop through them); when one is off the card says so, with one button
   that turns it on.
 - **Cost:** the line under the box puts NOLGIA Agent first, with what a turn
-  costs on your Agent's model: "NOLGIA Agent works right here, each turn
-  from N credits on your model", read from `GET /agent/models` for the
-  brain `GET /agent` names (from 10 credits when NOLGIA does not say). Then
+  typically costs on your Agent's model and the most a turn's own work is
+  billed: "NOLGIA Agent works right here, about N credits a turn on your
+  model, never more than C for its own work", N and C read from
+  `GET /agent/models` (`typical_turn_credits`, `turn_ceiling_credits`) for
+  the brain `GET /agent` names. Anything the Agent makes is billed on its
+  own. An API that publishes only the flat rate gives "each turn from N
+  credits on your model", and "from 10 credits" when NOLGIA does not say. Then
   "You can also use Claude, Cursor, Codex or another agent with NOLGIA
   connected" (the agents nolgia.ai/mcp documents). Each reply shows what it
   cost.
@@ -157,6 +161,11 @@ back as bare text without a line number. The pitfalls Photoshop scripting has
 
 ## Tested on
 
+- **0.2.6:** the cost line says what a turn typically costs on your model
+  and the cap on a turn's own work ("about 120 credits a turn on your model,
+  never more than 200 for its own work" on Claude Opus 5.5, from nolgia-api
+  #1378) instead of the flat minimum ("each turn from 70 credits"). Unit
+  tests against the mock API; not run in Photoshop, and not yet on macOS.
 - **0.2.5:** reconnecting, from the owner's fourth Mac test, where Photoshop
   and After Effects dropped off the connected list while macOS showed another
   Space (After Effects was silent for 5 minutes). The plugin backed off up to
@@ -247,7 +256,7 @@ node --test tests/*.test.js
 Build the installable `.ccx` (Python 3, standard library):
 
 ```sh
-python3 build.py                    # dist/nolgia-photoshop-0.2.5.ccx
+python3 build.py                    # dist/nolgia-photoshop-0.2.6.ccx
 python3 build.py --dev-domain http://localhost:8791
                                               # a test build that may also reach a local mock API
 ```

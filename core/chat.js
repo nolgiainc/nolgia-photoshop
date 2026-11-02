@@ -21,7 +21,7 @@
 "use strict";
 
 const { ApiError, Unauthorized, NetworkError } = require("./api.js");
-const { APP, AGENT_URL, BILLING_URL, COST_LINE, COST_LINE_RATE } = require("./constants.js");
+const { APP, AGENT_URL, BILLING_URL, COST_LINE, COST_LINE_RATE, COST_LINE_TYPICAL, COST_LINE_TYPICAL_CAP } = require("./constants.js");
 
 const MAX_CHARS = 8000; // SubmitAgentMessageRequest.content
 const SESSION_NAME_MAX = 80;
@@ -63,18 +63,28 @@ function byTime(a, b) {
   return ka < kb ? -1 : 1;
 }
 
-/** What one turn costs on the Agent's brain: its catalogue rate (the
- *  default brain's when none is chosen), or null when unknown. */
+/** What one turn costs on the Agent's brain (the default brain's when none
+ *  is chosen): {rate, typical, cap} from the catalogue, typical and cap null
+ *  when the API does not publish them; null when the brain is unknown. */
 function turnRate(agent, models) {
   if (!agent || !Array.isArray(models)) return null;
   const chosen = agent.model ? models.find((m) => m && m.model === agent.model) : models.find((m) => m && m.default);
-  const credits = chosen && chosen.turn_credits;
-  return Number.isInteger(credits) && credits > 0 ? credits : null;
+  if (!chosen) return null;
+  const whole = (n) => (Number.isInteger(n) && n > 0 ? n : null);
+  const rate = whole(chosen.turn_credits);
+  if (!rate) return null;
+  const typical = whole(chosen.typical_turn_credits);
+  const cap = whole(chosen.turn_ceiling_credits);
+  return { rate, typical: typical && typical >= rate ? typical : null, cap: cap && typical && cap >= typical ? cap : null };
 }
 
-/** The cost line under the box. */
+/** The cost line under the box: the typical turn and the cap when the API
+ *  publishes them, else the flat minimum, else the lowest rate. */
 function costLine(rate) {
-  return rate ? COST_LINE_RATE.replace("{credits}", String(rate)) : COST_LINE;
+  if (!rate) return COST_LINE;
+  if (rate.typical && rate.cap) return COST_LINE_TYPICAL_CAP.replace("{typical}", String(rate.typical)).replace("{cap}", String(rate.cap));
+  if (rate.typical) return COST_LINE_TYPICAL.replace("{typical}", String(rate.typical));
+  return COST_LINE_RATE.replace("{credits}", String(rate.rate));
 }
 
 /** A failed or stopped reply, in words for the panel. */
@@ -178,7 +188,7 @@ class AgentChat {
     this.stopping = false;
     this.notice = null; // {kind, text, action: {label, url}|null}
     this.agent = undefined; // GET /agent: undefined unread, null none
-    this.rate = null; // credits a turn costs on the Agent's brain, when known
+    this.rate = null; // {rate, typical, cap}: what a turn costs on the Agent's brain, when known
     this.loaded = false;
     this._generation = (this._generation || 0) + 1;
     this._timer = null;
